@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHeader } from "@/components/dashboard-shell";
-import { proposalById, type AgentScore } from "@/lib/mock-data";
+import { proposalById, type AgentScore, type Proposal } from "@/lib/mock-data";
 import { CheckCircle2, AlertTriangle, X, ArrowLeft, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/app/proposals/$id")({
@@ -23,7 +23,7 @@ const AGENT_LABEL: Record<AgentScore["agent"], string> = {
 };
 
 function ProposalPage() {
-  const { proposal } = Route.useLoaderData();
+  const { proposal } = Route.useLoaderData() as { proposal: Proposal };
 
   return (
     <>
@@ -58,7 +58,7 @@ function ProposalPage() {
 
       {/* Score summary */}
       <div className="grid gap-4 p-6 md:grid-cols-4 md:p-8">
-        {proposal.scores.map((s) => (
+        {proposal.scores.map((s: AgentScore) => (
           <div key={s.agent} className="rounded-2xl border border-border bg-card p-6">
             <div className="text-xs tracking-wider text-muted-foreground uppercase">
               {AGENT_LABEL[s.agent]}
@@ -81,7 +81,7 @@ function ProposalPage() {
       {/* Reasoning */}
       <div className="grid gap-6 px-6 pb-8 md:grid-cols-3 md:px-8">
         <div className="md:col-span-2 space-y-4">
-          {proposal.scores.map((s) => (
+          {proposal.scores.map((s: AgentScore) => (
             <div key={s.agent} className="rounded-2xl border border-border bg-card p-6">
               <div className="flex items-center justify-between">
                 <div>

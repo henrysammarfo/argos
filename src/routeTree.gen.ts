@@ -14,9 +14,17 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MerchRouteImport } from './routes/merch'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EscrowRouteImport } from './routes/escrow'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppEscrowRouteImport } from './routes/app.escrow'
+import { Route as AppAgentsRouteImport } from './routes/app.agents'
+import { Route as AppEvaluationsIndexRouteImport } from './routes/app.evaluations.index'
+import { Route as AppProposalsIdRouteImport } from './routes/app.proposals.$id'
+import { Route as AppEvaluationsIdRouteImport } from './routes/app.evaluations.$id'
 
 const ProductRoute = ProductRouteImport.update({
   id: '/product',
@@ -43,6 +51,11 @@ const EscrowRoute = EscrowRouteImport.update({
   path: '/escrow',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentsRoute = AgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
@@ -58,16 +71,59 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEscrowRoute = AppEscrowRouteImport.update({
+  id: '/escrow',
+  path: '/escrow',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsRoute = AppAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEvaluationsIndexRoute = AppEvaluationsIndexRouteImport.update({
+  id: '/evaluations/',
+  path: '/evaluations/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProposalsIdRoute = AppProposalsIdRouteImport.update({
+  id: '/proposals/$id',
+  path: '/proposals/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEvaluationsIdRoute = AppEvaluationsIdRouteImport.update({
+  id: '/evaluations/$id',
+  path: '/evaluations/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/agents': typeof AgentsRoute
+  '/app': typeof AppRouteWithChildren
   '/escrow': typeof EscrowRoute
   '/login': typeof LoginRoute
   '/merch': typeof MerchRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
+  '/app/agents': typeof AppAgentsRoute
+  '/app/escrow': typeof AppEscrowRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/evaluations/$id': typeof AppEvaluationsIdRoute
+  '/app/proposals/$id': typeof AppProposalsIdRoute
+  '/app/evaluations/': typeof AppEvaluationsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,17 +134,32 @@ export interface FileRoutesByTo {
   '/merch': typeof MerchRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
+  '/app/agents': typeof AppAgentsRoute
+  '/app/escrow': typeof AppEscrowRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app': typeof AppIndexRoute
+  '/app/evaluations/$id': typeof AppEvaluationsIdRoute
+  '/app/proposals/$id': typeof AppProposalsIdRoute
+  '/app/evaluations': typeof AppEvaluationsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/agents': typeof AgentsRoute
+  '/app': typeof AppRouteWithChildren
   '/escrow': typeof EscrowRoute
   '/login': typeof LoginRoute
   '/merch': typeof MerchRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
+  '/app/agents': typeof AppAgentsRoute
+  '/app/escrow': typeof AppEscrowRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/evaluations/$id': typeof AppEvaluationsIdRoute
+  '/app/proposals/$id': typeof AppProposalsIdRoute
+  '/app/evaluations/': typeof AppEvaluationsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,11 +167,19 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/agents'
+    | '/app'
     | '/escrow'
     | '/login'
     | '/merch'
     | '/pricing'
     | '/product'
+    | '/app/agents'
+    | '/app/escrow'
+    | '/app/settings'
+    | '/app/'
+    | '/app/evaluations/$id'
+    | '/app/proposals/$id'
+    | '/app/evaluations/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,22 +190,38 @@ export interface FileRouteTypes {
     | '/merch'
     | '/pricing'
     | '/product'
+    | '/app/agents'
+    | '/app/escrow'
+    | '/app/settings'
+    | '/app'
+    | '/app/evaluations/$id'
+    | '/app/proposals/$id'
+    | '/app/evaluations'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/agents'
+    | '/app'
     | '/escrow'
     | '/login'
     | '/merch'
     | '/pricing'
     | '/product'
+    | '/app/agents'
+    | '/app/escrow'
+    | '/app/settings'
+    | '/app/'
+    | '/app/evaluations/$id'
+    | '/app/proposals/$id'
+    | '/app/evaluations/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AgentsRoute: typeof AgentsRoute
+  AppRoute: typeof AppRouteWithChildren
   EscrowRoute: typeof EscrowRoute
   LoginRoute: typeof LoginRoute
   MerchRoute: typeof MerchRoute
@@ -171,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EscrowRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agents': {
       id: '/agents'
       path: '/agents'
@@ -192,13 +294,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/escrow': {
+      id: '/app/escrow'
+      path: '/escrow'
+      fullPath: '/app/escrow'
+      preLoaderRoute: typeof AppEscrowRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agents': {
+      id: '/app/agents'
+      path: '/agents'
+      fullPath: '/app/agents'
+      preLoaderRoute: typeof AppAgentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/evaluations/': {
+      id: '/app/evaluations/'
+      path: '/evaluations'
+      fullPath: '/app/evaluations/'
+      preLoaderRoute: typeof AppEvaluationsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/proposals/$id': {
+      id: '/app/proposals/$id'
+      path: '/proposals/$id'
+      fullPath: '/app/proposals/$id'
+      preLoaderRoute: typeof AppProposalsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/evaluations/$id': {
+      id: '/app/evaluations/$id'
+      path: '/evaluations/$id'
+      fullPath: '/app/evaluations/$id'
+      preLoaderRoute: typeof AppEvaluationsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
+
+interface AppRouteChildren {
+  AppAgentsRoute: typeof AppAgentsRoute
+  AppEscrowRoute: typeof AppEscrowRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppEvaluationsIdRoute: typeof AppEvaluationsIdRoute
+  AppProposalsIdRoute: typeof AppProposalsIdRoute
+  AppEvaluationsIndexRoute: typeof AppEvaluationsIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAgentsRoute: AppAgentsRoute,
+  AppEscrowRoute: AppEscrowRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppEvaluationsIdRoute: AppEvaluationsIdRoute,
+  AppProposalsIdRoute: AppProposalsIdRoute,
+  AppEvaluationsIndexRoute: AppEvaluationsIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AgentsRoute: AgentsRoute,
+  AppRoute: AppRouteWithChildren,
   EscrowRoute: EscrowRoute,
   LoginRoute: LoginRoute,
   MerchRoute: MerchRoute,

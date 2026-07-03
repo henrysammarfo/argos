@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { PageHeader } from "@/components/dashboard-shell";
-import { evaluations, proposalsFor, type Proposal } from "@/lib/mock-data";
+import { evaluations, proposalsFor, type Proposal, type ProposalStatus } from "@/lib/mock-data";
 import { useState } from "react";
 import { Filter, ArrowUpDown } from "lucide-react";
 
@@ -21,19 +21,22 @@ export const Route = createFileRoute("/app/evaluations/$id")({
 });
 
 function RoundPage() {
-  const { evaluation, proposals } = Route.useLoaderData();
-  const [filter, setFilter] = useState<"all" | "flagged" | "pending" | "approved">("all");
+  const { evaluation, proposals } = Route.useLoaderData() as {
+    evaluation: (typeof evaluations)[number];
+    proposals: Proposal[];
+  };
+  const [filter, setFilter] = useState<"all" | ProposalStatus>("all");
 
-  const filtered = proposals.filter((p) => {
+  const filtered = proposals.filter((p: Proposal) => {
     if (filter === "all") return true;
     return p.status === filter;
   });
 
   const counts = {
     all: proposals.length,
-    flagged: proposals.filter((p) => p.status === "flagged").length,
-    pending: proposals.filter((p) => p.status === "pending").length,
-    approved: proposals.filter((p) => p.status === "approved").length,
+    flagged: proposals.filter((p: Proposal) => p.status === "flagged").length,
+    pending: proposals.filter((p: Proposal) => p.status === "pending").length,
+    approved: proposals.filter((p: Proposal) => p.status === "approved").length,
   };
 
   return (
@@ -90,7 +93,7 @@ function RoundPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((p) => (
+              {filtered.map((p: Proposal) => (
                 <ProposalRow key={p.id} p={p} />
               ))}
             </tbody>
