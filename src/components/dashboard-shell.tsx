@@ -24,7 +24,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="theme-stripe flex min-h-dvh bg-background text-foreground">
       {/* Sidebar */}
       <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <div className="flex h-16 items-center border-b border-sidebar-border px-6">
