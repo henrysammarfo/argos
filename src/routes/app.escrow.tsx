@@ -245,7 +245,7 @@ function MilestoneRow({
             disabled={releasing}
             className="w-full rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 md:w-auto"
           >
-            Sign release
+            Approve release
           </button>
         ) : (
           <span

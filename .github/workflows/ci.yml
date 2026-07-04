@@ -19,7 +19,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
-      - run: pytest tests/test_smoke.py -v
+      - run: pytest tests/ -v
       - run: pip audit || true
 
   frontend:

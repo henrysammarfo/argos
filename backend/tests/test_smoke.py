@@ -8,7 +8,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test_argos.db")
 os.environ["JWT_SECRET"] = "test-jwt-secret"
-os.environ["OPENAI_API_KEY"] = ""
 
 from api.main import app
 
@@ -108,7 +107,8 @@ def test_unauthenticated_blocked():
     assert r.status_code == 401
 
 
-def test_run_requires_openai():
+def test_run_requires_openai(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     data = _register("OpenAI Org", "openai@test.org")
     headers = _auth_headers(data["access_token"])
     r = client.post(

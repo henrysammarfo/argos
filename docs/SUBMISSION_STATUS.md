@@ -61,7 +61,31 @@ python3 agents/test_asi_one.py
 - [ ] **ASI:One shared session URL** from browser chat after agents indexed
 - [ ] Run Agentverse **agent evaluation** in dashboard (boosts ASI:One ranking)
 
-## Keys configured (local `.env` — not in git)
+## Kaspa wallet model (important)
+
+**Judges do NOT connect a browser wallet** (no Kaspium extension, no MetaMask-style flow in the UI).
+
+| Step | Who | How |
+|------|-----|-----|
+| **Fund escrow** | Grant program / funder | Manually send KAS to the `escrow_address` shown in the console (Kaspium, exchange, etc.) |
+| **Grantee address** | Judge at escrow creation | Typed in when creating escrow (`grantee_kas_address`) |
+| **Milestone release** | Committee in ARGOS UI | Click **Approve release** → backend signs TX with `KASPA_PRIVATE_KEY` in server `.env` |
+| **Balance check** | Automatic | API reads testnet/mainnet via `KASPA_NODE_URL` |
+
+Live testnet check: `python3 backend/scripts/kaspa_live_check.py` (escrow wallet had **100,000 KAS** on tn10).
+
+## Test suite (run before submit)
+
+```bash
+cd backend && python3 -m pytest tests/ -v
+```
+
+| Suite | Tests |
+|-------|-------|
+| Smoke | auth, tenant isolation, email verify |
+| E2E | full grant → escrow → milestone submit → approve release |
+| Stress | 100 health checks, 20 concurrent signups, 30 parallel list requests |
+
 
 - `OPENAI_API_KEY` ✅
 - `ASI_ONE_API_KEY` ✅
