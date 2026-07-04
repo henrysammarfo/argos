@@ -30,22 +30,33 @@ FRONTEND="${FRONTEND_URL:-http://localhost:5173}"
 
 echo "Deploying ARGOS to ${VM_USER}@${VM_IP} (branch ${BRANCH})…"
 
-ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${VM_USER}@${VM_IP}" bash -s <<REMOTE
+# Private repo: tarball from local workspace (excludes node_modules, .git, secrets)
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TARBALL="$(mktemp /tmp/argos-deploy.XXXXXX.tgz)"
+trap 'rm -f "$TARBALL" "$ENV_FILE"' EXIT
+
+tar -czf "$TARBALL" \
+  --exclude='./node_modules' \
+  --exclude='./.git' \
+  --exclude='./.vercel' \
+  --exclude='./.output' \
+  --exclude='./backend/.env' \
+  --exclude='./.env' \
+  --exclude='./.env.production' \
+  -C "$ROOT" .
+
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${VM_USER}@${VM_IP}" "mkdir -p ~/argos"
+scp -i "$SSH_KEY" -o StrictHostKeyChecking=no "$TARBALL" "${VM_USER}@${VM_IP}:~/argos-deploy.tgz"
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${VM_USER}@${VM_IP}" bash -s <<'REMOTE'
 set -euo pipefail
 mkdir -p ~/argos
-cd ~/argos
-if [[ -d .git ]]; then
-  git fetch origin ${BRANCH}
-  git checkout ${BRANCH} 2>/dev/null || git checkout -b ${BRANCH} origin/${BRANCH}
-  git pull origin ${BRANCH}
-else
-  git clone -b ${BRANCH} ${REPO} .
-fi
+tar -xzf ~/argos-deploy.tgz -C ~/argos
+rm -f ~/argos-deploy.tgz
 REMOTE
 
 # Write production env locally, upload (never commit)
 ENV_FILE="$(mktemp)"
-trap 'rm -f "$ENV_FILE"' EXIT
+trap 'rm -f "$TARBALL" "$ENV_FILE"' EXIT
 
 cat >"$ENV_FILE" <<EOF
 ENV=production
