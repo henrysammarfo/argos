@@ -49,9 +49,8 @@ function MerchPage() {
             on your chest.
           </h1>
           <p className="mt-6 text-muted-foreground">
-            The ARGOS mark is a hexagonal aperture around a central pupil — one shape, stroke
-            only, that prints clean on cotton, embroiders on fleece, and cuts to vinyl. Preview
-            below.
+            The ARGOS mark is a hexagonal aperture around a central pupil — one shape, stroke only,
+            that prints clean on cotton, embroiders on fleece, and cuts to vinyl. Preview below.
           </p>
         </div>
 

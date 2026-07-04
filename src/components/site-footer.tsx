@@ -38,7 +38,7 @@ export function SiteFooter() {
             title="Stack"
             links={[
               { label: "Fetch.ai uAgents", to: "/agents" },
-              { label: "Anthropic Claude", to: "/product" },
+              { label: "OpenAI GPT-4o", to: "/product" },
               { label: "Kaspa escrow", to: "/escrow" },
               { label: "GCC Category 1", to: "/about" },
             ]}
@@ -54,13 +54,7 @@ export function SiteFooter() {
   );
 }
 
-function FooterCol({
-  title,
-  links,
-}: {
-  title: string;
-  links: { label: string; to: string }[];
-}) {
+function FooterCol({ title, links }: { title: string; links: { label: string; to: string }[] }) {
   return (
     <div>
       <div className="mb-4 text-xs font-semibold tracking-wider text-foreground uppercase">

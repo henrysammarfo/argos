@@ -12,4 +12,6 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Pin Nitro to Vercel when building outside Lovable (Render API is separate).
+  nitro: { preset: "vercel" },
 });

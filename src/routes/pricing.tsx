@@ -84,9 +84,7 @@ function PricingPage() {
           {tiers.map((t) => (
             <div
               key={t.name}
-              className={`liquid-glass rounded-2xl p-8 ${
-                t.highlight ? "ring-2 ring-primary" : ""
-              }`}
+              className={`liquid-glass rounded-2xl p-8 ${t.highlight ? "ring-2 ring-primary" : ""}`}
             >
               <div className="relative z-10">
                 {t.highlight && (
@@ -113,7 +111,7 @@ function PricingPage() {
                 </ul>
 
                 <Link
-                  to="/app"
+                  to="/login"
                   className={`mt-10 block rounded-full px-6 py-3 text-center text-sm font-semibold ${
                     t.highlight
                       ? "bg-primary text-primary-foreground hover:bg-primary/90"

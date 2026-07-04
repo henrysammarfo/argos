@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 .output
+.vercel
 .vinxi
 .tanstack/**
 .nitro
@@ -30,3 +31,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+*.db
+.env
+backend/.env
+backend/demo/demo_results.json
+.pytest_cache/
+.mypy_cache/
+*.egg-info/

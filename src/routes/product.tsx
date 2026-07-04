@@ -29,7 +29,7 @@ const sections = [
     title: "Every proposal, in the same shape.",
     body: "PDF, URL, or plain text goes in. Structured extractions — objectives, workplan, budget, milestones, team, prior work — come out. Nothing hand-typed. Nothing lost between reviewers.",
     bullets: [
-      "PyMuPDF + Claude for high-fidelity extraction",
+      "PyMuPDF + OpenAI GPT-4o for high-fidelity extraction",
       "URL fetch + HTML → markdown pipeline",
       "Normalized budget lines and timelines",
     ],
@@ -41,7 +41,7 @@ const sections = [
     body: "Technical, Impact, and Team agents each score against your rubric weights. Every number carries a cited rationale. Disagreement between agents triggers a human review flag automatically.",
     bullets: [
       "Rubric weights configurable per round",
-      "Claude reasoning attached to every score",
+      "OpenAI reasoning attached to every score",
       "Confidence bands drive the review queue",
     ],
   },
@@ -138,7 +138,7 @@ function ProductPage() {
             The console ships with 47 real climate-round proposals for you to walk through.
           </p>
           <Link
-            to="/app"
+            to="/login"
             className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
             Open the console <ArrowRight className="h-4 w-4" />

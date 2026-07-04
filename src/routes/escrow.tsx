@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react";
+import { Lock, ShieldCheck, LoaderCircle } from "lucide-react";
 import { VideoHero } from "@/components/video-hero";
 import { SiteFooter } from "@/components/site-footer";
+import { LiveMilestonePreview } from "@/components/live-escrow-preview";
 
 export const Route = createFileRoute("/escrow")({
   head: () => ({
@@ -64,71 +65,11 @@ function EscrowPage() {
           />
         </div>
 
-        {/* Milestone flow diagram */}
-        <div className="mt-16 rounded-2xl border border-border bg-card p-8 md:p-12">
-          <div className="text-xs tracking-wider text-muted-foreground uppercase">
-            Sample contract · esc-001 · 180,000 KAS
+        <div className="mt-16">
+          <div className="mb-4 text-xs tracking-wider text-muted-foreground uppercase">
+            Live escrow from API
           </div>
-          <div className="mt-8 space-y-8">
-            {[
-              {
-                name: "Kickoff + technical spec",
-                pct: 20,
-                state: "released" as const,
-                date: "Feb 14, 2026",
-              },
-              {
-                name: "Reference implementation",
-                pct: 40,
-                state: "released" as const,
-                date: "Apr 28, 2026",
-              },
-              {
-                name: "Field trial + benchmarks",
-                pct: 25,
-                state: "verifying" as const,
-                date: "Aug 15, 2026",
-              },
-              {
-                name: "Public release + docs",
-                pct: 15,
-                state: "locked" as const,
-                date: "Nov 30, 2026",
-              },
-            ].map((m, i, arr) => (
-              <div key={m.name} className="relative flex gap-6">
-                {i < arr.length - 1 && (
-                  <div className="absolute top-10 bottom-[-2rem] left-[15px] w-px bg-border" />
-                )}
-                <div
-                  className={`relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 ${
-                    m.state === "released"
-                      ? "border-[oklch(0.75_0.15_150)] bg-[oklch(0.75_0.15_150)]/20 text-[oklch(0.75_0.15_150)]"
-                      : m.state === "verifying"
-                        ? "border-primary bg-primary/20 text-primary"
-                        : "border-border bg-background text-muted-foreground"
-                  }`}
-                >
-                  {m.state === "released" ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : m.state === "verifying" ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Lock className="h-3.5 w-3.5" />
-                  )}
-                </div>
-                <div className="flex-1 pb-2">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <div className="text-base font-medium text-foreground">{m.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {m.pct}% · {((m.pct / 100) * 180000).toLocaleString()} KAS
-                    </div>
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">Due {m.date}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <LiveMilestonePreview />
         </div>
       </div>
 

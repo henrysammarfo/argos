@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, Card, EmptyState } from "@/components/dashboard-shell";
-import { evaluations } from "@/lib/mock-data";
+import { ApiError, ApiLoading } from "@/components/api-state";
+import { useEvaluations } from "@/lib/api-hooks";
 import { Plus, FileStack, Search } from "lucide-react";
 import { useState } from "react";
 
@@ -14,6 +15,25 @@ export const Route = createFileRoute("/app/evaluations/")({
 function EvaluationsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "review" | "complete">("all");
+  const { data: apiData, isLoading, isError, refetch } = useEvaluations();
+
+  if (isLoading) return <ApiLoading label="Loading evaluation rounds…" />;
+  if (isError) {
+    return <ApiError message="Cannot load evaluations from API." onRetry={() => void refetch()} />;
+  }
+
+  const evaluations =
+    apiData?.evaluations.map((e) => ({
+      id: e.id,
+      title: e.title,
+      description: e.description ?? "",
+      status: (e.status as "active" | "review" | "complete") ?? "active",
+      proposalCount: e.proposal_count ?? 0,
+      flaggedCount: e.flagged_count ?? 0,
+      grantAmountKas: e.grant_amount_kas ?? 0,
+      createdAt: e.created_at,
+      rubric: e.rubric,
+    })) ?? [];
 
   const filtered = evaluations.filter((e) => {
     const matchesQ = q === "" || e.title.toLowerCase().includes(q.toLowerCase());
@@ -26,11 +46,14 @@ function EvaluationsPage() {
       <PageHeader
         eyebrow="Evaluations"
         title="Rounds"
-        description="Every open, in-review, and archived grant round."
+        description="Every open, in-review, and archived grant round — live from API."
         actions={
-          <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
+          <Link
+            to="/app/setup"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
+          >
             <Plus className="h-4 w-4" /> New round
-          </button>
+          </Link>
         }
       />
 
@@ -66,8 +89,12 @@ function EvaluationsPage() {
           {filtered.length === 0 ? (
             <EmptyState
               icon={FileStack}
-              title="No rounds match"
-              description="Try clearing the search or switching status."
+              title={evaluations.length === 0 ? "No rounds yet" : "No rounds match"}
+              description={
+                evaluations.length === 0
+                  ? "Create your first evaluation round to get started."
+                  : "Try clearing the search or switching status."
+              }
             />
           ) : (
             <div className="overflow-x-auto">
