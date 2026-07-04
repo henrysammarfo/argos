@@ -42,7 +42,7 @@ app = FastAPI(
     description="AI Grant & Procurement Evaluation System",
     version="1.0.0",
     lifespan=lifespan,
-    redirect_slashes=False,
+    redirect_slashes=True,
 )
 
 app.state.limiter = limiter

@@ -63,10 +63,11 @@ async def send_kaspa(
     amount_kas: float,
     note: Optional[str] = None,
 ) -> str:
-    """Send KAS. Uses kaspa SDK when seed is configured; otherwise simulation."""
+    """Send KAS via SDK (seed or private key) or simulation."""
     seed = os.getenv("KASPA_SEED_PHRASE", "")
+    private_key = os.getenv("KASPA_PRIVATE_KEY", "")
 
-    if seed and not SIMULATION_MODE:
+    if (seed or private_key) and not SIMULATION_MODE:
         try:
             return await _send_via_sdk(from_address, to_address, amount_kas, note)
         except Exception as e:
@@ -84,7 +85,7 @@ async def send_kaspa(
         return f"sim_tx_{int(amount_kas * 1e8)}"
 
     raise RuntimeError(
-        "Kaspa send requires KASPA_SEED_PHRASE or KASPA_SIMULATION=true"
+        "Kaspa send requires KASPA_SEED_PHRASE, KASPA_PRIVATE_KEY, or KASPA_SIMULATION=true"
     )
 
 
@@ -98,13 +99,25 @@ async def _send_via_sdk(
     import asyncio
 
     def _sync_send() -> str:
-        from kaspa import Resolver, RpcClient, Wallet  # type: ignore
+        try:
+            from kaspa import Resolver, Wallet  # type: ignore
+        except ImportError:
+            raise RuntimeError("kaspa package not installed — pip install kaspa")
+
+        network_id = KASPA_NETWORK if KASPA_NETWORK != "kaspatest" else "testnet"
+        wallet = Wallet(resolver=Resolver(), network_id=network_id)
 
         seed = os.getenv("KASPA_SEED_PHRASE", "")
-        network_id = KASPA_NETWORK
+        private_key = os.getenv("KASPA_PRIVATE_KEY", "")
 
-        wallet = Wallet(resolver=Resolver(), network_id=network_id)
-        wallet.create_or_load_wallet(seed=seed)
+        if seed:
+            wallet.create_or_load_wallet(seed=seed)
+        elif private_key:
+            # Load from hex private key when seed unavailable
+            wallet.create_or_load_wallet(private_key=private_key)
+        else:
+            raise RuntimeError("No Kaspa credentials configured")
+
         sompi = int(amount_kas * 1e8)
         tx_id = wallet.send(to_address, sompi)
         return str(tx_id)

@@ -8,10 +8,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test_argos.db")
 os.environ.setdefault("KASPA_SIMULATION", "true")
+os.environ["ADMIN_API_KEY"] = "test-admin-key"
+os.environ.pop("OPENAI_API_KEY", None)
 
 from api.main import app
 
 client = TestClient(app)
+ADMIN_HEADERS = {"X-Admin-Key": "test-admin-key"}
 
 
 @pytest.fixture(autouse=True)
@@ -44,6 +47,7 @@ def test_create_evaluation():
             "rubric": {"technical": 30, "impact": 40, "team": 30},
             "grant_amount_kas": 1000,
         },
+        headers=ADMIN_HEADERS,
     )
     assert r.status_code == 200
     assert "id" in r.json()
@@ -56,6 +60,7 @@ def test_full_pipeline():
             "title": "Pipeline Test",
             "rubric": {"technical": 30, "impact": 40, "team": 30},
         },
+        headers=ADMIN_HEADERS,
     )
     eval_id = r.json()["id"]
 
@@ -78,9 +83,10 @@ def test_full_pipeline():
                 },
             ],
         },
+        headers=ADMIN_HEADERS,
     )
 
-    run_r = client.post(f"/api/evaluations/{eval_id}/run")
+    run_r = client.post(f"/api/evaluations/{eval_id}/run", headers=ADMIN_HEADERS)
     assert run_r.status_code == 200
 
     import time
