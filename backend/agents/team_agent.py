@@ -17,13 +17,17 @@ from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
 )
 
+from agents._agentverse import agent_kwargs
 from services.claude_evaluator import evaluate_team
 
 team_agent = Agent(
     name="argos-team",
-    seed=os.getenv("TEAM_SEED", "argos_team_seed_phrase_change_in_production"),
-    port=8014,
-    endpoint=[f"http://localhost:8014/submit"],
+    **agent_kwargs(
+        port=8014,
+        seed_env="TEAM_SEED",
+        default_seed="argos_team_seed_phrase_change_in_production",
+        description="ARGOS Team — track record and expertise scoring",
+    ),
 )
 
 chat_proto = Protocol(spec=chat_protocol_spec)

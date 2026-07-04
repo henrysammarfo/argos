@@ -17,14 +17,18 @@ from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
 )
 
+from agents._agentverse import agent_kwargs
 from services.claude_evaluator import extract_proposal_structure
 from services.proposal_reader import read_proposal, truncate_for_evaluation
 
 intake_agent = Agent(
     name="argos-intake",
-    seed=os.getenv("INTAKE_SEED", "argos_intake_seed_phrase_change_in_production"),
-    port=8011,
-    endpoint=[f"http://localhost:8011/submit"],
+    **agent_kwargs(
+        port=8011,
+        seed_env="INTAKE_SEED",
+        default_seed="argos_intake_seed_phrase_change_in_production",
+        description="ARGOS Intake — proposal ingestion and structure extraction",
+    ),
 )
 
 chat_proto = Protocol(spec=chat_protocol_spec)

@@ -17,13 +17,17 @@ from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
 )
 
+from agents._agentverse import agent_kwargs
 from services.claude_evaluator import verify_milestone
 
 milestone_agent = Agent(
     name="argos-milestone",
-    seed=os.getenv("MILESTONE_SEED", "argos_milestone_seed_phrase_change_in_production"),
-    port=8015,
-    endpoint=[f"http://localhost:8015/submit"],
+    **agent_kwargs(
+        port=8015,
+        seed_env="MILESTONE_SEED",
+        default_seed="argos_milestone_seed_phrase_change_in_production",
+        description="ARGOS Milestone — deliverable verification for Kaspa escrow",
+    ),
 )
 
 chat_proto = Protocol(spec=chat_protocol_spec)

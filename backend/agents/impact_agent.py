@@ -17,13 +17,17 @@ from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
 )
 
+from agents._agentverse import agent_kwargs
 from services.claude_evaluator import evaluate_impact
 
 impact_agent = Agent(
     name="argos-impact",
-    seed=os.getenv("IMPACT_SEED", "argos_impact_seed_phrase_change_in_production"),
-    port=8013,
-    endpoint=[f"http://localhost:8013/submit"],
+    **agent_kwargs(
+        port=8013,
+        seed_env="IMPACT_SEED",
+        default_seed="argos_impact_seed_phrase_change_in_production",
+        description="ARGOS Impact — scale and sustainability scoring",
+    ),
 )
 
 chat_proto = Protocol(spec=chat_protocol_spec)

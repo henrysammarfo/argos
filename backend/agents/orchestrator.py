@@ -22,6 +22,7 @@ from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
 )
 
+from agents._agentverse import agent_kwargs
 from services.openai_evaluator import (
     evaluate_impact,
     evaluate_team,
@@ -34,9 +35,12 @@ from services.scoring import collect_red_flags, compute_weighted_score
 
 orchestrator = Agent(
     name="argos-orchestrator",
-    seed=os.getenv("ORCHESTRATOR_SEED", "argos_orchestrator_seed_phrase_change_in_production"),
-    port=8010,
-    endpoint=[f"http://localhost:8010/submit"],
+    **agent_kwargs(
+        port=8010,
+        seed_env="ORCHESTRATOR_SEED",
+        default_seed="argos_orchestrator_seed_phrase_change_in_production",
+        description="ARGOS Orchestrator — grant proposal evaluation via ASI:One",
+    ),
 )
 
 chat_proto = Protocol(spec=chat_protocol_spec)

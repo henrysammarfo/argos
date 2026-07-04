@@ -54,15 +54,21 @@ python3 demo/run_demo.py
 
 ```bash
 cd backend
-python agents/orchestrator.py    # port 8010
-python agents/intake_agent.py    # port 8011
-python agents/technical_agent.py # port 8012
-python agents/impact_agent.py    # port 8013
-python agents/team_agent.py      # port 8014
-python agents/milestone_agent.py # port 8015
+
+# Register all 6 agents on Agentverse (requires AGENTVERSE_API_KEY in .env)
+python3 agents/register_agentverse.py
+
+# Run orchestrator with Agentverse mailbox (keep running for ASI:One chat)
+USE_AGENTVERSE_MAILBOX=true python3 agents/orchestrator.py
+
+# Or run all agents
+python3 agents/run_mailbox_agents.py
+
+# Test ASI:One API discovery
+python3 agents/test_asi_one.py
 ```
 
-Register addresses on [Agentverse](https://agentverse.ai). Set env vars `ORCHESTRATOR_ADDRESS`, etc.
+See [docs/SUBMISSION_STATUS.md](docs/SUBMISSION_STATUS.md) for Agentverse profile URLs and hackathon checklist.
 
 ## API Keys Required
 
