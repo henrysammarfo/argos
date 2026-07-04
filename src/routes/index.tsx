@@ -12,6 +12,8 @@ import {
 import { VideoHero } from "@/components/video-hero";
 import { SiteFooter } from "@/components/site-footer";
 import { ArgosMark } from "@/components/argos-logo";
+import { LiveStatsStrip } from "@/components/live-stats-strip";
+import { LiveMilestonePreview } from "@/components/live-escrow-preview";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -72,10 +74,7 @@ function Home() {
       {/* Numbers strip */}
       <section className="border-y border-border">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 py-14 md:grid-cols-4 md:px-12">
-          <Stat kpi="25×" label="faster review cycles" />
-          <Stat kpi="6wk → 8h" label="round turnaround" />
-          <Stat kpi="300h → 12h" label="expert time reclaimed" />
-          <Stat kpi="100%" label="decisions auditable" />
+          <LiveStatsStrip />
         </div>
       </section>
 
@@ -126,7 +125,7 @@ function Home() {
                 Five agents. One rubric. Every proposal.
               </h2>
               <p className="mt-3 text-muted-foreground">
-                Registered on Agentverse, discoverable via ASI:One, wired to Anthropic Claude for
+                Registered on Agentverse, discoverable via ASI:One, powered by OpenAI gpt-4o for
                 reasoning.
               </p>
             </div>
@@ -205,7 +204,7 @@ function Home() {
             </Link>
           </div>
 
-          <MilestoneVisual />
+          <LiveMilestonePreview />
         </div>
       </section>
 
@@ -216,7 +215,7 @@ function Home() {
             Ready to move a six-week backlog in an afternoon?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Open the console with a demo round of 47 real proposals already loaded.
+            Open the console — every page polls the live FastAPI backend in real time.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -236,15 +235,6 @@ function Home() {
       </section>
 
       <SiteFooter />
-    </div>
-  );
-}
-
-function Stat({ kpi, label }: { kpi: string; label: string }) {
-  return (
-    <div>
-      <div className="text-3xl font-medium tracking-tight text-foreground md:text-4xl">{kpi}</div>
-      <div className="mt-1 text-sm text-muted-foreground">{label}</div>
     </div>
   );
 }
@@ -270,67 +260,6 @@ function StepCard({
       </div>
       <div className="mt-8 text-xl font-medium text-foreground">{title}</div>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
-    </div>
-  );
-}
-
-function MilestoneVisual() {
-  const rows = [
-    { name: "Kickoff", pct: 20, state: "released" as const },
-    { name: "Reference build", pct: 40, state: "released" as const },
-    { name: "Field trial", pct: 25, state: "verifying" as const },
-    { name: "Public release", pct: 15, state: "locked" as const },
-  ];
-  return (
-    <div className="rounded-2xl border border-border bg-card p-6">
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Contract esc-001</span>
-        <span className="text-primary">180,000 KAS</span>
-      </div>
-      <div className="mt-6 space-y-4">
-        {rows.map((r) => (
-          <div key={r.name} className="flex items-center gap-4">
-            <div
-              className={`h-2 w-2 flex-shrink-0 rounded-full ${
-                r.state === "released"
-                  ? "bg-[oklch(0.75_0.15_150)]"
-                  : r.state === "verifying"
-                    ? "bg-primary"
-                    : "bg-muted-foreground/30"
-              }`}
-            />
-            <div className="flex-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{r.name}</span>
-                <span className="text-muted-foreground">{r.pct}%</span>
-              </div>
-              <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className={`h-full ${
-                    r.state === "released"
-                      ? "bg-[oklch(0.75_0.15_150)]"
-                      : r.state === "verifying"
-                        ? "bg-primary"
-                        : "bg-muted-foreground/20"
-                  }`}
-                  style={{ width: r.state === "locked" ? "0%" : "100%" }}
-                />
-              </div>
-            </div>
-            <span
-              className={`w-20 text-right text-[10px] tracking-wider uppercase ${
-                r.state === "released"
-                  ? "text-[oklch(0.75_0.15_150)]"
-                  : r.state === "verifying"
-                    ? "text-primary"
-                    : "text-muted-foreground"
-              }`}
-            >
-              {r.state}
-            </span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, Card, EmptyState } from "@/components/dashboard-shell";
-import { escrows as mockEscrows } from "@/lib/mock-data";
+import { ApiError, ApiLoading } from "@/components/api-state";
 import { useEscrows, useApproveMilestone } from "@/lib/api-hooks";
 import { CheckCircle2, LoaderCircle, Lock, ExternalLink, Coins } from "lucide-react";
 import { useState } from "react";
@@ -30,29 +30,28 @@ interface ApiEscrow {
 }
 
 function EscrowPage() {
-  const { data: apiData, isLoading } = useEscrows();
+  const { data: apiData, isLoading, isError, refetch } = useEscrows();
   const approveMilestone = useApproveMilestone();
   const [actionMsg, setActionMsg] = useState("");
 
-  const apiEscrows: ApiEscrow[] = apiData?.escrows ?? [];
-  const useMock = !apiEscrows.length && !isLoading;
+  if (isLoading) return <ApiLoading label="Loading Kaspa escrows…" />;
+  if (isError) {
+    return <ApiError message="Cannot load escrows from API." onRetry={() => void refetch()} />;
+  }
 
-  const total = useMock
-    ? mockEscrows.reduce((a, b) => a + b.totalKas, 0)
-    : apiEscrows.reduce((a, b) => a + b.total_kas, 0);
-  const released = useMock
-    ? mockEscrows.reduce((a, b) => a + b.releasedKas, 0)
-    : apiEscrows.reduce((a, e) => {
-        const done = e.milestones
-          .filter((m) => m.status === "released")
-          .reduce((s, m) => s + (m.kas_amount ?? 0), 0);
-        return a + done;
-      }, 0);
+  const apiEscrows: ApiEscrow[] = apiData?.escrows ?? [];
+
+  const total = apiEscrows.reduce((a, b) => a + b.total_kas, 0);
+  const released = apiEscrows.reduce((a, e) => {
+    const done = e.milestones
+      .filter((m) => m.status === "released")
+      .reduce((s, m) => s + (m.kas_amount ?? 0), 0);
+    return a + done;
+  }, 0);
 
   const handleSignRelease = async (escrowId: string, milestoneIndex: number) => {
     setActionMsg("");
     try {
-      // Submit a verification report then approve — simplified flow for demo
       const { submitMilestone, approveMilestone: approve } = await import("@/lib/api");
       const sub = await submitMilestone({
         escrow_id: escrowId,
@@ -72,7 +71,7 @@ function EscrowPage() {
       <PageHeader
         eyebrow="Escrow"
         title="Kaspa contracts"
-        description="Milestone escrow under ARGOS — funds release only after AI verification + human approval."
+        description="Live milestone escrow — funds release only after AI verification + human approval."
       />
 
       {actionMsg && (
@@ -92,15 +91,7 @@ function EscrowPage() {
       </div>
 
       <div className="space-y-4 px-4 pb-8 sm:px-6 md:space-y-6 md:px-8">
-        {useMock ? (
-          mockEscrows.map((c) => (
-            <MockEscrowCard
-              key={c.id}
-              contract={c}
-              onSignRelease={() => void handleSignRelease(c.id, 0)}
-            />
-          ))
-        ) : apiEscrows.length === 0 ? (
+        {apiEscrows.length === 0 ? (
           <Card>
             <EmptyState
               icon={Coins}
@@ -136,6 +127,9 @@ function ApiEscrowCard({
     .filter((m) => m.status === "released")
     .reduce((s, m) => s + (m.kas_amount ?? 0), 0);
   const pct = Math.round((released / escrow.total_kas) * 100) || 0;
+  const explorerBase = escrow.escrow_address.startsWith("kaspatest:")
+    ? "https://explorer-tn10.kaspa.org/addresses"
+    : "https://explorer.kaspa.org/addresses";
 
   return (
     <Card>
@@ -157,12 +151,12 @@ function ApiEscrowCard({
             {escrow.total_kas.toLocaleString()} KAS
           </div>
           <a
-            href={`https://explorer.kaspa.org/addresses/${escrow.escrow_address}`}
+            href={`${explorerBase}/${escrow.escrow_address}`}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
           >
-            {escrow.escrow_address.slice(0, 16)}… <ExternalLink className="h-3 w-3" />
+            {escrow.escrow_address.slice(0, 20)}… <ExternalLink className="h-3 w-3" />
           </a>
         </div>
       </div>
@@ -178,37 +172,6 @@ function ApiEscrowCard({
             releaseTx={m.release_tx}
             onRelease={m.status === "locked" ? () => onSignRelease(idx) : undefined}
             releasing={releasing}
-          />
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
-function MockEscrowCard({
-  contract: c,
-  onSignRelease,
-}: {
-  contract: (typeof mockEscrows)[number];
-  onSignRelease: () => void;
-}) {
-  const pctReleased = Math.round((c.releasedKas / c.totalKas) * 100);
-  return (
-    <Card>
-      <div className="border-b border-border p-5">
-        <div className="text-lg font-semibold">{c.proposalTitle}</div>
-        <div className="text-sm text-muted-foreground">{c.organization}</div>
-      </div>
-      <ul className="divide-y divide-border">
-        {c.milestones.map((m) => (
-          <MilestoneRow
-            key={m.id}
-            name={m.name}
-            dueDate={m.dueDate}
-            kas={Math.round((m.percent / 100) * c.totalKas).toLocaleString()}
-            percent={m.percent}
-            status={m.status}
-            onRelease={m.status === "verifying" ? onSignRelease : undefined}
           />
         ))}
       </ul>

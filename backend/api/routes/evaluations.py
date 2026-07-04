@@ -40,7 +40,18 @@ def _eval_to_response(e: Evaluation) -> dict:
 @router.get("/")
 def list_evaluations(db: Session = Depends(get_db)):
     evals = db.query(Evaluation).order_by(Evaluation.created_at.desc()).all()
-    return {"evaluations": [_eval_to_response(e) for e in evals]}
+    result = []
+    for e in evals:
+        proposals = db.query(Proposal).filter(Proposal.evaluation_id == e.id).all()
+        flagged = sum(1 for p in proposals if loads(p.red_flags, []))
+        result.append(
+            {
+                **_eval_to_response(e),
+                "proposal_count": len(proposals),
+                "flagged_count": flagged,
+            }
+        )
+    return {"evaluations": result}
 
 
 @router.post("/", dependencies=[Depends(require_admin)])
@@ -72,6 +83,12 @@ async def run_evaluation(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
+    if not os.getenv("OPENAI_API_KEY"):
+        raise HTTPException(
+            status_code=503,
+            detail="OPENAI_API_KEY is required for live evaluation",
+        )
+
     evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
@@ -108,28 +125,22 @@ async def _run_evaluation_pipeline(
             db.commit()
 
             text = truncate_for_evaluation(proposal.raw_text or "")
-            use_mock = not os.getenv("OPENAI_API_KEY")
 
-            if use_mock:
-                technical = _mock_technical()
-                impact = _mock_impact()
-                team = _mock_team()
-            else:
-                technical, impact, team = await asyncio.gather(
-                    evaluate_technical_merit(text, rubric.get("technical", 30)),
-                    evaluate_impact(text, rubric.get("impact", 40)),
-                    evaluate_team(text, rubric.get("team", 30)),
-                    return_exceptions=True,
-                )
-                if isinstance(technical, Exception):
-                    logger.error("Technical eval failed: %s", technical)
-                    technical = {}
-                if isinstance(impact, Exception):
-                    logger.error("Impact eval failed: %s", impact)
-                    impact = {}
-                if isinstance(team, Exception):
-                    logger.error("Team eval failed: %s", team)
-                    team = {}
+            technical, impact, team = await asyncio.gather(
+                evaluate_technical_merit(text, rubric.get("technical", 30)),
+                evaluate_impact(text, rubric.get("impact", 40)),
+                evaluate_team(text, rubric.get("team", 30)),
+                return_exceptions=True,
+            )
+            if isinstance(technical, Exception):
+                logger.error("Technical eval failed: %s", technical)
+                raise technical
+            if isinstance(impact, Exception):
+                logger.error("Impact eval failed: %s", impact)
+                raise impact
+            if isinstance(team, Exception):
+                logger.error("Team eval failed: %s", team)
+                raise team
 
             total_score = compute_weighted_score(technical, impact, team, rubric)
             all_flags = collect_red_flags(technical, impact, team)
@@ -169,33 +180,6 @@ async def _run_evaluation_pipeline(
         db.commit()
     finally:
         db.close()
-
-
-def _mock_technical() -> dict:
-    return {
-        "innovation": {"score": 7, "reasoning": "Mock evaluation — set OPENAI_API_KEY for live scoring."},
-        "feasibility": {"score": 7, "reasoning": "Mock evaluation."},
-        "methodology": {"score": 7, "reasoning": "Mock evaluation."},
-        "red_flags": [],
-    }
-
-
-def _mock_impact() -> dict:
-    return {
-        "scale": {"score": 7, "reasoning": "Mock evaluation."},
-        "sustainability": {"score": 7, "reasoning": "Mock evaluation."},
-        "counterfactual": {"score": 7, "reasoning": "Mock evaluation."},
-        "red_flags": [],
-    }
-
-
-def _mock_team() -> dict:
-    return {
-        "track_record": {"score": 7, "reasoning": "Mock evaluation."},
-        "expertise": {"score": 7, "reasoning": "Mock evaluation."},
-        "risk_management": {"score": 7, "reasoning": "Mock evaluation."},
-        "red_flags": [],
-    }
 
 
 @router.get("/{evaluation_id}/status")

@@ -31,7 +31,13 @@ async def create_escrow(data: EscrowCreate, db: Session = Depends(get_db)):
     milestone_schedule = calculate_milestone_amounts(
         evaluation.grant_amount_kas, milestones_raw
     )
-    escrow_address = os.getenv("ESCROW_WALLET_ADDRESS", "kaspa:qr...")
+    escrow_address = os.getenv("ESCROW_WALLET_ADDRESS")
+    program_admin = os.getenv("PROGRAM_ADMIN_ADDRESS")
+    if not escrow_address or not program_admin:
+        raise HTTPException(
+            status_code=503,
+            detail="ESCROW_WALLET_ADDRESS and PROGRAM_ADMIN_ADDRESS must be configured",
+        )
 
     escrow = KaspaEscrow(
         evaluation_id=data.evaluation_id,
@@ -40,7 +46,7 @@ async def create_escrow(data: EscrowCreate, db: Session = Depends(get_db)):
         escrow_address=escrow_address,
         milestones=dumps(milestone_schedule),
         grantee_kas_address=data.grantee_kas_address,
-        program_admin_kas_address=os.getenv("PROGRAM_ADMIN_ADDRESS", "kaspa:qr..."),
+        program_admin_kas_address=program_admin,
     )
     db.add(escrow)
     db.commit()

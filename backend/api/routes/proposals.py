@@ -27,6 +27,12 @@ async def _ingest_proposal(
     source_type: str,
     source: str,
 ) -> Proposal:
+    if not os.getenv("OPENAI_API_KEY"):
+        raise HTTPException(
+            status_code=503,
+            detail="OPENAI_API_KEY is required for proposal ingestion",
+        )
+
     evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
@@ -34,12 +40,7 @@ async def _ingest_proposal(
     raw_text = await read_proposal(source_type, source)
     truncated = truncate_for_evaluation(raw_text)
 
-    structure = {}
-    if os.getenv("OPENAI_API_KEY"):
-        try:
-            structure = await extract_proposal_structure(truncated)
-        except Exception as e:
-            logger.warning("Structure extraction failed: %s", e)
+    structure = await extract_proposal_structure(truncated)
 
     proposal = Proposal(
         evaluation_id=evaluation_id,

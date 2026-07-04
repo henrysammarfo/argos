@@ -1,33 +1,32 @@
 # ARGOS — AI Grant & Procurement Evaluation System
 
-ARGOS takes 50 grant proposals from 6 weeks of committee review to 8 hours — every AI evaluation step shown, explained, and human-approved — with milestone payments locked in Kaspa conditional escrow.
+ARGOS takes grant proposals from weeks of committee review to hours — every AI evaluation step shown, explained, and human-approved — with milestone payments locked in Kaspa conditional escrow.
 
 **Hackathon:** UK AI Agent Hackathon EP5 × Conduct · [DoraHacks #2272](https://dorahacks.io/hackathon/2272)
 
 ## Architecture
 
-- **Frontend:** TanStack Start + React 19 + Tailwind v4 (Lovable)
-- **Backend:** FastAPI + PostgreSQL + SQLAlchemy
-- **AI:** OpenAI GPT-4o (technical, impact, team scoring)
+- **Frontend:** TanStack Start + React 19 + Tailwind v4 (Lovable) — all pages poll live API
+- **Backend:** FastAPI + SQLAlchemy (PostgreSQL or SQLite locally)
+- **AI:** OpenAI GPT-4o (technical, impact, team scoring) — required, no mock fallback
 - **Agents:** 6 Fetch.ai uAgents on Agentverse (Chat Protocol)
-- **Blockchain:** Kaspa milestone escrow (api.kaspa.org + kaspa SDK)
+- **Blockchain:** Kaspa milestone escrow (testnet via api-tn10.kaspa.org + kaspa SDK)
 
 See [docs/ARGOS_ARCHITECTURE.md](docs/ARGOS_ARCHITECTURE.md) for full diagram.
 
-## Quick Start
+## Quick Start (local only — no cloud billing required)
 
 ### 1. Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env — set OPENAI_API_KEY, DATABASE_URL, etc.
+# Edit .env — OPENAI_API_KEY, ADMIN_API_KEY, Kaspa keys, etc.
 
 pip install -r requirements.txt
 
-# SQLite (no Docker):
+# SQLite (simplest):
 export DATABASE_URL=sqlite:///./argos.db
-export KASPA_SIMULATION=true
 
 uvicorn api.main:app --reload --port 8000
 ```
@@ -37,25 +36,21 @@ uvicorn api.main:app --reload --port 8000
 ```bash
 bun install
 cp .env.example .env
+# Set VITE_API_BASE_URL and VITE_ADMIN_API_KEY
 
 bun run dev
 # Open http://localhost:5173
 ```
 
-### 3. Docker (PostgreSQL + API)
-
-```bash
-docker compose up
-```
-
-### 4. Demo pipeline
+### 3. Demo pipeline
 
 ```bash
 cd backend
-python demo/run_demo.py
+source .env
+python3 demo/run_demo.py
 ```
 
-### 5. uAgents (optional — for Fetch.ai bounty)
+### 4. uAgents (Fetch.ai bounty)
 
 ```bash
 cd backend
@@ -71,15 +66,15 @@ Register addresses on [Agentverse](https://agentverse.ai). Set env vars `ORCHEST
 
 ## API Keys Required
 
-| Key                 | Required        | Purpose              |
-| ------------------- | --------------- | -------------------- |
-| `OPENAI_API_KEY`    | Yes (live eval) | GPT-4o scoring       |
-| `ASI_ONE_API_KEY`   | Recommended     | ASI:One discovery    |
-| `ADMIN_API_KEY`     | Recommended     | Protect mutations    |
-| `KASPA_SEED_PHRASE` | For live Kaspa  | Milestone releases   |
-| `DATABASE_URL`      | Yes             | PostgreSQL or SQLite |
-
-Without `OPENAI_API_KEY`, backend uses mock scores for demo.
+| Key | Required | Purpose |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | **Yes** | GPT-4o scoring — no fallback |
+| `ADMIN_API_KEY` | **Yes** | Protect mutations + frontend |
+| `ASI_ONE_API_KEY` | Recommended | ASI:One discovery |
+| `AGENTVERSE_API_KEY` | Recommended | Agent registration |
+| `KASPA_PRIVATE_KEY` | For releases | Testnet milestone sends |
+| `ESCROW_WALLET_ADDRESS` | For escrow | Deposit address |
+| `DATABASE_URL` | Yes | PostgreSQL or SQLite |
 
 See [docs/API_KEYS.md](docs/API_KEYS.md) for step-by-step key acquisition.
 
@@ -88,35 +83,19 @@ See [docs/API_KEYS.md](docs/API_KEYS.md) for step-by-step key acquisition.
 - Swagger UI: http://localhost:8000/docs
 - Contract: [docs/ARGOS_API_CONTRACT.md](docs/ARGOS_API_CONTRACT.md)
 
-## Per-Bounty Highlights
-
-- **Conduct:** Human-in-the-loop audit trail, score override with reason
-- **Fetch.ai:** 6 Agentverse agents, Chat Protocol, ASI:One compatible orchestrator
-- **Kaspa:** Balance verification via api.kaspa.org, milestone release flow
-- **GCC:** Rubric transparency, counterfactual impact scoring
-
 ## Testing
 
 ```bash
-# Backend
 pytest backend/tests/ -v
-
-# Frontend
-bun run lint
-bun run build
+bun run lint && bun run build
 ```
 
 ## Documentation
 
-- [API Keys Setup](docs/API_KEYS.md) — step-by-step for every credential
-- [Memory / Facts](docs/ARGOS_MEMORY.md) — living reference + bible corrections
-- [Security](docs/ARGOS_SECURITY.md) — threat model and controls
-- [Hackathon Checklist](docs/ARGOS_HACKATHON_CHECKLIST.md) — submission checklist
-- [Theme](docs/ARGOS_THEME.md) — design system
-
-## Builder
-
-Henry Sam Marfo · github.com/henrysammarfo
+- [API Keys Setup](docs/API_KEYS.md)
+- [Memory / Facts](docs/ARGOS_MEMORY.md)
+- [Security](docs/ARGOS_SECURITY.md)
+- [Hackathon Checklist](docs/ARGOS_HACKATHON_CHECKLIST.md)
 
 ## License
 

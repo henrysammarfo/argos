@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, Card, CardHeader } from "@/components/dashboard-shell";
-import { evaluations, agents, proposalsFor } from "@/lib/mock-data";
+import { ApiError, ApiLoading, formatRelativeTime } from "@/components/api-state";
+import { useDashboardStats, useDashboardActivity, useAgents } from "@/lib/api-hooks";
 import {
   FileStack,
   AlertTriangle,
@@ -8,7 +9,6 @@ import {
   Coins,
   ArrowUpRight,
   Radio,
-  TrendingUp,
   Clock,
   Plus,
 } from "lucide-react";
@@ -24,89 +24,77 @@ export const Route = createFileRoute("/app/")({
 });
 
 function OverviewPage() {
-  const active = evaluations.filter((e) => e.status !== "complete");
-  const totalProposals = evaluations.reduce((a, b) => a + b.proposalCount, 0);
-  const totalFlagged = evaluations.reduce((a, b) => a + b.flaggedCount, 0);
-  const totalKas = evaluations.reduce((a, b) => a + b.grantAmountKas, 0);
+  const { data: stats, isLoading, isError, refetch } = useDashboardStats();
+  const { data: activityData } = useDashboardActivity();
+  const { data: agentsData } = useAgents();
 
-  // Fake weekly evaluations series for the sparkline
-  const series = [12, 18, 15, 24, 22, 28, 34, 31, 38, 42, 47, 52];
+  if (isLoading) return <ApiLoading label="Loading live dashboard…" />;
+  if (isError || !stats) {
+    return (
+      <ApiError
+        message="Cannot reach ARGOS API. Start the backend: cd backend && uvicorn api.main:app --port 8000"
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  const rounds = stats.rounds;
+  const active = stats.active_rounds;
+  const agents = agentsData?.agents ?? [];
 
   return (
     <>
       <PageHeader
         eyebrow="Overview"
-        title="Good morning, Kwame."
-        description="Two rounds active. Eight proposals flagged for your review."
+        title="ARGOS Console"
+        description={`${active} active round${active === 1 ? "" : "s"} · ${stats.total_proposals} proposals · ${stats.flagged_proposals} flagged`}
         actions={
-          <>
-            <button className="hidden rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-muted sm:inline-flex">
-              Export
-            </button>
-            <Link
-              to="/app/evaluations"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4" /> New round
-            </Link>
-          </>
+          <Link
+            to="/app/evaluations"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" /> New round
+          </Link>
         }
       />
 
-      {/* KPI grid */}
       <div className="grid gap-4 p-4 sm:p-6 md:grid-cols-2 md:p-8 xl:grid-cols-4">
-        <Kpi
-          label="Active rounds"
-          value={active.length.toString()}
-          delta="+1 this week"
-          icon={FileStack}
-        />
+        <Kpi label="Active rounds" value={active.toString()} icon={FileStack} />
         <Kpi
           label="Proposals in flight"
-          value={totalProposals.toString()}
-          delta="+14 vs last week"
+          value={stats.total_proposals.toString()}
           icon={FileStack}
         />
         <Kpi
           label="Flagged for review"
-          value={totalFlagged.toString()}
-          delta="Awaits committee"
+          value={stats.flagged_proposals.toString()}
           icon={AlertTriangle}
           tone="flag"
         />
         <Kpi
           label="Escrow under management"
-          value={`${(totalKas / 1_000_000).toFixed(1)}M KAS`}
-          delta="≈ $2.9M USD"
+          value={`${stats.escrow_managed_kas.toLocaleString()} KAS`}
           icon={Coins}
         />
       </div>
 
-      {/* Row: chart + agent health */}
       <div className="grid gap-4 px-4 pb-4 sm:px-6 md:grid-cols-3 md:gap-6 md:px-8 md:pb-6">
         <Card className="md:col-span-2">
-          <CardHeader
-            title="Proposals evaluated · last 12 weeks"
-            action={
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-[color:var(--approve)]">
-                <TrendingUp className="h-3.5 w-3.5" /> +38%
-              </span>
-            }
-          />
+          <CardHeader title="Proposals evaluated · last 12 weeks" />
           <div className="p-5">
-            <Sparkline data={series} />
+            <Sparkline data={stats.evaluations_weekly} />
             <div className="mt-3 grid grid-cols-3 gap-4 border-t border-border pt-4 text-xs text-muted-foreground">
               <div>
-                <div className="text-foreground">4.2 h</div>
-                Median review time
+                <div className="text-foreground">{stats.complete_proposals}</div>
+                Evaluated
               </div>
               <div>
-                <div className="text-foreground">92%</div>
-                Auto-approval rate
+                <div className="text-foreground">{stats.pending_proposals}</div>
+                Pending
               </div>
               <div>
-                <div className="text-foreground">1.8%</div>
-                Human override rate
+                <div className="text-foreground">{stats.grant_pool_kas.toLocaleString()}</div>
+                Grant pool KAS
               </div>
             </div>
           </div>
@@ -122,30 +110,24 @@ function OverviewPage() {
             }
           />
           <ul className="divide-y divide-border">
-            {agents.slice(0, 6).map((a) => (
+            {agents.map((a) => (
               <li key={a.id} className="flex items-center gap-3 px-5 py-3">
                 <Radio
                   className={`h-3.5 w-3.5 flex-shrink-0 ${
-                    a.status === "online"
-                      ? "text-[color:var(--approve)]"
-                      : a.status === "degraded"
-                        ? "text-[color:var(--flag)]"
-                        : "text-destructive"
+                    a.status === "online" ? "text-[color:var(--approve)]" : "text-destructive"
                   }`}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm text-foreground">{a.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {a.avgLatencyMs}ms · {a.proposalsHandled} handled
+                    {a.proposals_handled} handled · {a.role}
                   </div>
                 </div>
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase ${
                     a.status === "online"
                       ? "bg-[color:var(--approve)]/10 text-[color:var(--approve)]"
-                      : a.status === "degraded"
-                        ? "bg-[color:var(--flag)]/10 text-[color:var(--flag)]"
-                        : "bg-destructive/10 text-destructive"
+                      : "bg-destructive/10 text-destructive"
                   }`}
                 >
                   {a.status}
@@ -156,7 +138,6 @@ function OverviewPage() {
         </Card>
       </div>
 
-      {/* Active rounds */}
       <div className="grid gap-4 px-4 pb-4 sm:px-6 md:gap-6 md:px-8 md:pb-6">
         <Card>
           <CardHeader
@@ -170,69 +151,74 @@ function OverviewPage() {
               </Link>
             }
           />
-          <div className="divide-y divide-border">
-            {evaluations.map((e) => {
-              const props = proposalsFor(e.id);
-              const approvedRatio =
-                props.filter((p) => p.status === "approved").length / Math.max(props.length, 1);
-              return (
-                <Link
-                  key={e.id}
-                  to="/app/evaluations/$id"
-                  params={{ id: e.id }}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 hover:bg-muted/40 md:grid-cols-[minmax(0,2fr)_140px_120px_auto]"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-foreground">{e.title}</div>
-                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {e.proposalCount} proposals · {e.flaggedCount} flagged ·{" "}
-                      {(e.grantAmountKas / 1000).toFixed(0)}K KAS
+          {rounds.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              No rounds yet.{" "}
+              <Link to="/app/setup" className="text-primary hover:underline">
+                Create one
+              </Link>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {rounds.map((e) => {
+                const approvedRatio =
+                  e.proposal_count > 0 ? e.approved_count / e.proposal_count : 0;
+                return (
+                  <Link
+                    key={e.id}
+                    to="/app/evaluations/$id"
+                    params={{ id: e.id }}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 hover:bg-muted/40 md:grid-cols-[minmax(0,2fr)_140px_120px_auto]"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-foreground">
+                        {e.title}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {e.proposal_count} proposals · {e.flagged_count} flagged ·{" "}
+                        {(e.grant_amount_kas / 1000).toFixed(0)}K KAS
+                      </div>
                     </div>
-                  </div>
-                  <div className="hidden md:block">
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full bg-[color:var(--approve)]"
-                        style={{ width: `${Math.round(approvedRatio * 100)}%` }}
-                      />
+                    <div className="hidden md:block">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full bg-[color:var(--approve)]"
+                          style={{ width: `${Math.round(approvedRatio * 100)}%` }}
+                        />
+                      </div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">
+                        {Math.round(approvedRatio * 100)}% approved
+                      </div>
                     </div>
-                    <div className="mt-1 text-[11px] text-muted-foreground">
-                      {Math.round(approvedRatio * 100)}% approved
+                    <div className="hidden text-xs text-muted-foreground md:block">
+                      <Clock className="mr-1 inline h-3 w-3" />
+                      {new Date(e.created_at).toLocaleDateString()}
                     </div>
-                  </div>
-                  <div className="hidden text-xs text-muted-foreground md:block">
-                    <Clock className="mr-1 inline h-3 w-3" />
-                    {new Date(e.createdAt).toLocaleDateString()}
-                  </div>
-                  <StatusPill status={e.status} />
-                </Link>
-              );
-            })}
-          </div>
+                    <StatusPill status={e.status} />
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </Card>
 
         <Card>
           <CardHeader title="Recent activity" />
-          <ul className="divide-y divide-border">
-            <ActivityRow
-              icon={CheckCircle2}
-              tone="approve"
-              text="Milestone M2 released on esc-001 — 72,000 KAS to Threshold Labs"
-              time="2h ago"
-            />
-            <ActivityRow
-              icon={AlertTriangle}
-              tone="flag"
-              text="Impact agent flagged Prop #23 — vague success criteria"
-              time="4h ago"
-            />
-            <ActivityRow
-              icon={CheckCircle2}
-              tone="approve"
-              text="Round Q1 Open Source marked complete — 34 proposals resolved"
-              time="yesterday"
-            />
-          </ul>
+          {(activityData?.activity.length ?? 0) === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">No activity yet.</div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {activityData!.activity.map((ev, i) => (
+                <ActivityRow
+                  key={i}
+                  icon={ev.tone === "flag" ? AlertTriangle : CheckCircle2}
+                  tone={ev.tone === "flag" ? "flag" : "approve"}
+                  text={ev.text}
+                  time={formatRelativeTime(ev.time)}
+                />
+              ))}
+            </ul>
+          )}
         </Card>
       </div>
     </>
@@ -242,13 +228,11 @@ function OverviewPage() {
 function Kpi({
   label,
   value,
-  delta,
   icon: Icon,
   tone,
 }: {
   label: string;
   value: string;
-  delta?: string;
   icon: React.ComponentType<{ className?: string }>;
   tone?: "flag";
 }) {
@@ -267,7 +251,6 @@ function Kpi({
         </div>
       </div>
       <div className="mt-4 text-3xl font-semibold tracking-tight text-foreground">{value}</div>
-      {delta && <div className="mt-1 text-xs text-muted-foreground">{delta}</div>}
     </div>
   );
 }
@@ -316,10 +299,10 @@ function ActivityRow({
 function Sparkline({ data }: { data: number[] }) {
   const w = 640;
   const h = 140;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
   const range = max - min || 1;
-  const step = w / (data.length - 1);
+  const step = w / Math.max(data.length - 1, 1);
   const points = data.map((v, i) => {
     const x = i * step;
     const y = h - ((v - min) / range) * (h - 20) - 8;

@@ -1,23 +1,14 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, Card } from "@/components/dashboard-shell";
-import { proposalById, type AgentScore } from "@/lib/mock-data";
+import { ApiError, ApiLoading } from "@/components/api-state";
 import { useProposal, useApproveScore, useOverrideScore } from "@/lib/api-hooks";
+import { mapApiProposal, type AgentScore } from "@/lib/types";
 import { useState } from "react";
 import { CheckCircle2, AlertTriangle, X, ArrowLeft, FileText, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/app/proposals/$id")({
-  loader: ({ params }) => {
-    const p = proposalById(params.id);
-    return { proposalId: params.id, mockProposal: p ?? null };
-  },
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: loaderData?.mockProposal
-          ? `${loaderData.mockProposal.title} — ARGOS`
-          : "Proposal — ARGOS",
-      },
-    ],
+  head: () => ({
+    meta: [{ title: "Proposal — ARGOS" }],
   }),
   component: ProposalPage,
 });
@@ -30,8 +21,8 @@ const AGENT_LABEL: Record<AgentScore["agent"], string> = {
 };
 
 function ProposalPage() {
-  const { proposalId, mockProposal } = Route.useLoaderData();
-  const { data: apiProposal } = useProposal(proposalId);
+  const { id: proposalId } = Route.useParams();
+  const { data: apiProposal, isLoading, isError, refetch } = useProposal(proposalId);
   const approveScore = useApproveScore();
   const overrideScore = useOverrideScore();
   const [overrideDim, setOverrideDim] = useState("");
@@ -39,9 +30,14 @@ function ProposalPage() {
   const [overrideReason, setOverrideReason] = useState("");
   const [actionMsg, setActionMsg] = useState("");
 
-  const proposal = apiProposal ? mapApiProposal(apiProposal) : mockProposal;
+  if (isLoading) return <ApiLoading label="Loading proposal…" />;
+  if (isError || !apiProposal) {
+    return (
+      <ApiError message="Proposal not found or API unreachable." onRetry={() => void refetch()} />
+    );
+  }
 
-  if (!proposal) throw notFound();
+  const proposal = mapApiProposal(apiProposal);
 
   const handleApprove = async () => {
     try {
@@ -88,7 +84,7 @@ function ProposalPage() {
       </div>
 
       <PageHeader
-        eyebrow={proposal.organization}
+        eyebrow={proposal.organization || "Proposal"}
         title={proposal.title}
         description={proposal.summary}
         actions={
@@ -150,19 +146,25 @@ function ProposalPage() {
                     Score {s.score} · {(s.confidence * 100).toFixed(0)}% confidence
                   </div>
                 </div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
-                    s.confidence < 0.85
-                      ? "bg-[color:var(--flag)]/10 text-[color:var(--flag)]"
-                      : "bg-[color:var(--approve)]/10 text-[color:var(--approve)]"
-                  }`}
-                >
-                  {s.confidence < 0.85 ? "needs review" : "high confidence"}
-                </span>
               </div>
-              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{s.reasoning}</p>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                {s.reasoning || "No reasoning returned."}
+              </p>
             </Card>
           ))}
+
+          {apiProposal.red_flags.length > 0 && (
+            <Card className="border-[color:var(--flag)]/30 p-5">
+              <div className="flex items-center gap-2 text-[11px] font-semibold tracking-wider text-[color:var(--flag)] uppercase">
+                <AlertTriangle className="h-3.5 w-3.5" /> Red flags
+              </div>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground">
+                {apiProposal.red_flags.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           <Card className="p-5">
             <div className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
@@ -207,10 +209,19 @@ function ProposalPage() {
               Meta
             </div>
             <dl className="mt-4 space-y-3 text-sm">
-              <Row k="Amount" v={`${proposal.amountKas.toLocaleString()} KAS`} />
               <Row k="Overall" v={proposal.overallScore.toString()} />
+              <Row k="Rank" v={apiProposal.rank?.toString() ?? "—"} />
               <Row k="Status" v={proposal.status} capitalize />
-              <Row k="Submitted" v={new Date(proposal.submittedAt).toLocaleDateString()} />
+              <Row k="Budget" v={apiProposal.budget_requested ?? "—"} />
+              <Row k="Timeline" v={apiProposal.timeline ?? "—"} />
+              <Row
+                k="Evaluated"
+                v={
+                  apiProposal.evaluated_at
+                    ? new Date(apiProposal.evaluated_at).toLocaleString()
+                    : "—"
+                }
+              />
             </dl>
           </Card>
 
@@ -218,61 +229,22 @@ function ProposalPage() {
             <div className="flex items-center gap-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
               <FileText className="h-3.5 w-3.5" /> Source
             </div>
-            <div className="mt-3 rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs text-muted-foreground">
-              {proposal.id}.pdf · 42 pages
+            <div className="mt-3 max-h-48 overflow-y-auto rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+              {apiProposal.raw_text?.slice(0, 2000) ?? "No source text."}
+              {(apiProposal.raw_text?.length ?? 0) > 2000 && "…"}
             </div>
+          </Card>
+
+          <Card className="p-5">
+            <div className="flex items-center gap-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+              <MessageSquare className="h-3.5 w-3.5" /> Team
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">{apiProposal.team_summary ?? "—"}</p>
           </Card>
         </aside>
       </div>
     </>
   );
-}
-
-function mapApiProposal(p: import("@/lib/api").ProposalDetail) {
-  return {
-    id: p.id,
-    evaluationId: p.evaluation_id,
-    title: p.title,
-    organization: p.team_summary?.slice(0, 40) ?? "",
-    amountKas: 0,
-    status: (p.red_flags.length > 0 ? "flagged" : "approved") as "flagged" | "approved",
-    overallScore: p.total_score,
-    scores: [
-      {
-        agent: "technical" as const,
-        score: avgDim(p.technical_scores),
-        confidence: 0.85,
-        reasoning: firstReason(p.technical_scores),
-      },
-      {
-        agent: "impact" as const,
-        score: avgDim(p.impact_scores),
-        confidence: 0.85,
-        reasoning: firstReason(p.impact_scores),
-      },
-      {
-        agent: "team" as const,
-        score: avgDim(p.team_scores),
-        confidence: 0.85,
-        reasoning: firstReason(p.team_scores),
-      },
-    ],
-    summary: p.objectives ?? "",
-    submittedAt: p.evaluated_at ?? new Date().toISOString(),
-  };
-}
-
-function avgDim(scores: Record<string, { score: number }>): number {
-  const vals = Object.values(scores).filter((v) => v?.score != null);
-  if (!vals.length) return 0;
-  return Math.round(vals.reduce((a, d) => a + d.score, 0) / vals.length);
-}
-
-function firstReason(scores: Record<string, { reasoning?: string }>): string {
-  for (const v of Object.values(scores)) {
-    if (v?.reasoning) return v.reasoning;
-  }
-  return "";
 }
 
 function Row({ k, v, capitalize }: { k: string; v: string; capitalize?: boolean }) {

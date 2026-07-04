@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 KASPA_NODE = os.getenv("KASPA_NODE_URL", "https://api.kaspa.org")
 KASPA_NETWORK = os.getenv("KASPA_NETWORK", "mainnet")
-SIMULATION_MODE = os.getenv("KASPA_SIMULATION", "false").lower() == "true"
 
 
 async def get_balance(address: str) -> float:
@@ -63,30 +62,16 @@ async def send_kaspa(
     amount_kas: float,
     note: Optional[str] = None,
 ) -> str:
-    """Send KAS via SDK (seed or private key) or simulation."""
+    """Send KAS via SDK (seed or private key)."""
     seed = os.getenv("KASPA_SEED_PHRASE", "")
     private_key = os.getenv("KASPA_PRIVATE_KEY", "")
 
-    if (seed or private_key) and not SIMULATION_MODE:
-        try:
-            return await _send_via_sdk(from_address, to_address, amount_kas, note)
-        except Exception as e:
-            logger.error("Kaspa SDK send failed: %s", e)
-            raise
-
-    if SIMULATION_MODE:
-        logger.info(
-            "KASPA SIMULATION: %s KAS from %s to %s — %s",
-            amount_kas,
-            from_address,
-            to_address,
-            note,
+    if not seed and not private_key:
+        raise RuntimeError(
+            "Kaspa send requires KASPA_SEED_PHRASE or KASPA_PRIVATE_KEY"
         )
-        return f"sim_tx_{int(amount_kas * 1e8)}"
 
-    raise RuntimeError(
-        "Kaspa send requires KASPA_SEED_PHRASE, KASPA_PRIVATE_KEY, or KASPA_SIMULATION=true"
-    )
+    return await _send_via_sdk(from_address, to_address, amount_kas, note)
 
 
 async def _send_via_sdk(
@@ -113,7 +98,6 @@ async def _send_via_sdk(
         if seed:
             wallet.create_or_load_wallet(seed=seed)
         elif private_key:
-            # Load from hex private key when seed unavailable
             wallet.create_or_load_wallet(private_key=private_key)
         else:
             raise RuntimeError("No Kaspa credentials configured")

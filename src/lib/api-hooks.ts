@@ -1,11 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
 
+const LIVE_REFETCH_MS = 5000;
+
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: api.getDashboardStats,
+    refetchInterval: LIVE_REFETCH_MS,
+    retry: 2,
+  });
+}
+
+export function useDashboardActivity() {
+  return useQuery({
+    queryKey: ["dashboard-activity"],
+    queryFn: api.getDashboardActivity,
+    refetchInterval: LIVE_REFETCH_MS,
+    retry: 2,
+  });
+}
+
 export function useEvaluations() {
   return useQuery({
     queryKey: ["evaluations"],
     queryFn: api.listEvaluations,
-    retry: 1,
+    refetchInterval: LIVE_REFETCH_MS,
+    retry: 2,
   });
 }
 
@@ -14,6 +35,7 @@ export function useEvaluation(id: string) {
     queryKey: ["evaluation", id],
     queryFn: () => api.getEvaluation(id),
     enabled: !!id,
+    refetchInterval: LIVE_REFETCH_MS,
   });
 }
 
@@ -22,7 +44,7 @@ export function useEvaluationStatus(id: string, poll = false) {
     queryKey: ["evaluation-status", id],
     queryFn: () => api.getEvaluationStatus(id),
     enabled: !!id,
-    refetchInterval: poll ? 2000 : false,
+    refetchInterval: poll ? 2000 : LIVE_REFETCH_MS,
   });
 }
 
@@ -31,6 +53,7 @@ export function useEvaluationResults(id: string) {
     queryKey: ["evaluation-results", id],
     queryFn: () => api.getEvaluationResults(id),
     enabled: !!id,
+    refetchInterval: LIVE_REFETCH_MS,
   });
 }
 
@@ -38,7 +61,10 @@ export function useCreateEvaluation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: api.createEvaluation,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["evaluations"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["evaluations"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
   });
 }
 
@@ -49,6 +75,7 @@ export function useRunEvaluation() {
     onSuccess: (_d, id) => {
       qc.invalidateQueries({ queryKey: ["evaluation-status", id] });
       qc.invalidateQueries({ queryKey: ["evaluation-results", id] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
   });
 }
@@ -58,6 +85,7 @@ export function useProposal(id: string) {
     queryKey: ["proposal", id],
     queryFn: () => api.getProposal(id),
     enabled: !!id,
+    refetchInterval: LIVE_REFETCH_MS,
   });
 }
 
@@ -75,6 +103,7 @@ export function useApproveScore() {
     }) => api.approveScore(proposalId, dimension, evaluator),
     onSuccess: (_d, { proposalId }) => {
       qc.invalidateQueries({ queryKey: ["proposal", proposalId] });
+      qc.invalidateQueries({ queryKey: ["dashboard-activity"] });
     },
   });
 }
@@ -95,23 +124,31 @@ export function useOverrideScore() {
     onSuccess: (_d, { proposalId }) => {
       qc.invalidateQueries({ queryKey: ["proposal", proposalId] });
       qc.invalidateQueries({ queryKey: ["evaluation-results"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-activity"] });
     },
   });
 }
 
-export function useAgentAddresses() {
+export function useAgents() {
   return useQuery({
     queryKey: ["agents"],
-    queryFn: api.getAgentAddresses,
-    retry: 1,
+    queryFn: api.getAgents,
+    refetchInterval: LIVE_REFETCH_MS,
+    retry: 2,
   });
+}
+
+/** @deprecated use useAgents */
+export function useAgentAddresses() {
+  return useAgents();
 }
 
 export function useEscrows(evaluationId?: string) {
   return useQuery({
     queryKey: ["escrows", evaluationId],
     queryFn: () => api.listEscrows(evaluationId),
-    retry: 1,
+    refetchInterval: LIVE_REFETCH_MS,
+    retry: 2,
   });
 }
 
@@ -119,7 +156,10 @@ export function useCreateEscrow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: api.createEscrow,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["escrows"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["escrows"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
   });
 }
 
@@ -130,6 +170,8 @@ export function useCreateProposalsBatch() {
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["evaluation-results", vars.evaluation_id] });
       qc.invalidateQueries({ queryKey: ["evaluation-status", vars.evaluation_id] });
+      qc.invalidateQueries({ queryKey: ["evaluations"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
   });
 }
@@ -142,7 +184,11 @@ export function useApproveMilestone() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, note }: { id: string; note?: string }) => api.approveMilestone(id, note),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["escrows"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["escrows"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-activity"] });
+    },
   });
 }
 
@@ -153,9 +199,11 @@ export function useHealthDb() {
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api"}/health/db`,
       );
+      if (!res.ok) throw new Error("Database unreachable");
       return res.json();
     },
-    retry: 1,
+    refetchInterval: 30_000,
+    retry: 2,
   });
 }
 
@@ -166,9 +214,11 @@ export function useHealthKaspa() {
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api"}/health/kaspa`,
       );
+      if (!res.ok) throw new Error("Kaspa node unreachable");
       return res.json();
     },
-    retry: 1,
+    refetchInterval: 30_000,
+    retry: 2,
   });
 }
 
@@ -176,7 +226,7 @@ export function useHealthCheck() {
   return useQuery({
     queryKey: ["health"],
     queryFn: api.checkHealth,
-    retry: 1,
-    staleTime: 30_000,
+    refetchInterval: 30_000,
+    retry: 2,
   });
 }

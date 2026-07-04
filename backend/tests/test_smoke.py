@@ -7,9 +7,8 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test_argos.db")
-os.environ.setdefault("KASPA_SIMULATION", "true")
 os.environ["ADMIN_API_KEY"] = "test-admin-key"
-os.environ.pop("OPENAI_API_KEY", None)
+os.environ["OPENAI_API_KEY"] = ""
 
 from api.main import app
 
@@ -39,6 +38,14 @@ def test_health_db():
     assert r.json()["status"] == "ok"
 
 
+def test_dashboard_stats():
+    r = client.get("/api/dashboard/stats")
+    assert r.status_code == 200
+    data = r.json()
+    assert "active_rounds" in data
+    assert "evaluations_weekly" in data
+
+
 def test_create_evaluation():
     r = client.post(
         "/api/evaluations/",
@@ -53,56 +60,20 @@ def test_create_evaluation():
     assert "id" in r.json()
 
 
-def test_full_pipeline():
+def test_run_requires_openai():
     r = client.post(
         "/api/evaluations/",
-        json={
-            "title": "Pipeline Test",
-            "rubric": {"technical": 30, "impact": 40, "team": 30},
-        },
+        json={"title": "Run Test", "rubric": {"technical": 30, "impact": 40, "team": 30}},
         headers=ADMIN_HEADERS,
     )
     eval_id = r.json()["id"]
-
-    client.post(
-        "/api/proposals/batch",
-        json={
-            "evaluation_id": eval_id,
-            "proposals": [
-                {
-                    "evaluation_id": eval_id,
-                    "title": "Test Proposal A",
-                    "source_type": "text",
-                    "source": "A climate adaptation project with strong team.",
-                },
-                {
-                    "evaluation_id": eval_id,
-                    "title": "Test Proposal B",
-                    "source_type": "text",
-                    "source": "An open-source medical AI framework for NHS.",
-                },
-            ],
-        },
-        headers=ADMIN_HEADERS,
-    )
-
     run_r = client.post(f"/api/evaluations/{eval_id}/run", headers=ADMIN_HEADERS)
-    assert run_r.status_code == 200
-
-    import time
-
-    for _ in range(30):
-        status = client.get(f"/api/evaluations/{eval_id}/status").json()
-        if status["done"]:
-            break
-        time.sleep(0.5)
-
-    results = client.get(f"/api/evaluations/{eval_id}/results").json()
-    assert len(results["proposals"]) >= 1
-    assert results["proposals"][0]["total_score"] is not None
+    assert run_r.status_code == 503
 
 
 def test_agents_endpoint():
     r = client.get("/api/agents")
     assert r.status_code == 200
-    assert "orchestrator" in r.json()
+    data = r.json()
+    assert "agents" in data
+    assert len(data["agents"]) == 6

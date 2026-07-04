@@ -1,10 +1,8 @@
 /**
- * ARGOS typed API client.
- * Set VITE_USE_MOCK=true to fall back to mock data when backend is unavailable.
+ * ARGOS typed API client — all requests hit the live FastAPI backend.
  */
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 const ADMIN_KEY = import.meta.env.VITE_ADMIN_API_KEY ?? "";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -17,17 +15,54 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail ?? `HTTP ${res.status}`);
+    throw new Error(typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail));
   }
   return res.json() as Promise<T>;
 }
 
-export function isMockMode() {
-  return USE_MOCK;
-}
-
 export async function checkHealth(): Promise<{ status: string }> {
   return request("/health");
+}
+
+// --- Dashboard ---
+
+export interface DashboardStats {
+  active_rounds: number;
+  total_proposals: number;
+  pending_proposals: number;
+  complete_proposals: number;
+  flagged_proposals: number;
+  grant_pool_kas: number;
+  escrow_managed_kas: number;
+  escrow_released_kas: number;
+  evaluations_weekly: number[];
+  rounds: Array<{
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    proposal_count: number;
+    flagged_count: number;
+    approved_count: number;
+    grant_amount_kas: number;
+    created_at: string;
+    rubric: { technical: number; impact: number; team: number };
+  }>;
+}
+
+export interface ActivityEvent {
+  type: string;
+  text: string;
+  time: string;
+  tone: "approve" | "flag" | "neutral";
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  return request("/dashboard/stats");
+}
+
+export async function getDashboardActivity(): Promise<{ activity: ActivityEvent[] }> {
+  return request("/dashboard/activity");
 }
 
 // --- Evaluations ---
@@ -49,6 +84,8 @@ export interface EvaluationRecord {
   milestones?: Array<{ name: string; date: string; percent: number }>;
   status: string;
   created_at: string;
+  proposal_count?: number;
+  flagged_count?: number;
 }
 
 export async function listEvaluations(): Promise<{ evaluations: EvaluationRecord[] }> {
@@ -223,13 +260,21 @@ export async function approveMilestone(submissionId: string, note = "") {
 
 // --- Agents ---
 
-export async function getAgentAddresses() {
+export interface AgentRecord {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+  address: string;
+  status: "online" | "offline" | "degraded";
+  proposals_handled: number;
+}
+
+export async function getAgents() {
   return request<{
-    orchestrator: string;
-    intake: string;
-    technical: string;
-    impact: string;
-    team: string;
-    milestone: string;
+    agents: AgentRecord[];
+    online_count: number;
+    proposals_complete: number;
+    proposals_pending: number;
   }>("/agents");
 }

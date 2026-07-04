@@ -1,11 +1,6 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, Card } from "@/components/dashboard-shell";
-import {
-  evaluations as mockEvaluations,
-  proposalsFor,
-  type Proposal,
-  type ProposalStatus,
-} from "@/lib/mock-data";
+import { ApiError, ApiLoading } from "@/components/api-state";
 import {
   useEvaluation,
   useEvaluationResults,
@@ -14,32 +9,20 @@ import {
   useCreateProposalsBatch,
   useCreateEscrow,
 } from "@/lib/api-hooks";
+import { mapResultProposal, type ProposalView, type ProposalStatus } from "@/lib/types";
 import { useState } from "react";
 import { Filter, ArrowUpDown, Download, Play, Loader2, Plus, Coins } from "lucide-react";
 
 export const Route = createFileRoute("/app/evaluations/$id")({
-  loader: ({ params }) => {
-    const ev = mockEvaluations.find((e) => e.id === params.id);
-    if (!ev) {
-      return { evaluationId: params.id, mockEvaluation: null };
-    }
-    return { evaluationId: params.id, mockEvaluation: ev };
-  },
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: loaderData?.mockEvaluation
-          ? `${loaderData.mockEvaluation.title} — ARGOS`
-          : "Round — ARGOS",
-      },
-    ],
+  head: () => ({
+    meta: [{ title: "Round — ARGOS" }],
   }),
   component: RoundPage,
 });
 
 function RoundPage() {
-  const { evaluationId, mockEvaluation } = Route.useLoaderData();
-  const { data: apiEval } = useEvaluation(evaluationId);
+  const { id: evaluationId } = Route.useParams();
+  const { data: apiEval, isLoading, isError, refetch } = useEvaluation(evaluationId);
   const { data: status, refetch: refetchStatus } = useEvaluationStatus(evaluationId, true);
   const { data: results } = useEvaluationResults(evaluationId);
   const runEval = useRunEvaluation();
@@ -49,56 +32,27 @@ function RoundPage() {
   const [running, setRunning] = useState(false);
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadText, setUploadText] = useState("");
-  const [granteeAddress, setGranteeAddress] = useState("kaspa:qr...");
+  const [granteeAddress, setGranteeAddress] = useState("");
   const [msg, setMsg] = useState("");
 
-  const evaluation = apiEval
-    ? {
-        id: apiEval.id,
-        title: apiEval.title,
-        description: apiEval.description ?? "",
-        rubric: apiEval.rubric,
-        grantAmountKas: apiEval.grant_amount_kas ?? 0,
-      }
-    : mockEvaluation;
+  if (isLoading) return <ApiLoading label="Loading evaluation round…" />;
+  if (isError || !apiEval) {
+    return (
+      <ApiError message="Evaluation not found or API unreachable." onRetry={() => void refetch()} />
+    );
+  }
 
-  if (!evaluation) throw notFound();
+  const evaluation = {
+    id: apiEval.id,
+    title: apiEval.title,
+    description: apiEval.description ?? "",
+    rubric: apiEval.rubric,
+    grantAmountKas: apiEval.grant_amount_kas ?? 0,
+  };
 
-  const mockProposals = proposalsFor(evaluationId);
-  const apiProposals: Proposal[] =
-    results?.proposals.map((p) => ({
-      id: p.id,
-      evaluationId,
-      title: p.title,
-      organization: "",
-      amountKas: 0,
-      status: (p.red_flags.length > 0 ? "flagged" : "approved") as ProposalStatus,
-      overallScore: p.total_score,
-      scores: [
-        {
-          agent: "technical" as const,
-          score: avgDim(p.technical_scores),
-          confidence: 0.85,
-          reasoning: "",
-        },
-        {
-          agent: "impact" as const,
-          score: avgDim(p.impact_scores),
-          confidence: 0.85,
-          reasoning: "",
-        },
-        {
-          agent: "team" as const,
-          score: avgDim(p.team_scores),
-          confidence: 0.85,
-          reasoning: "",
-        },
-      ],
-      summary: "",
-      submittedAt: new Date().toISOString(),
-    })) ?? [];
+  const proposals: ProposalView[] =
+    results?.proposals.map((p) => mapResultProposal(p, evaluationId)) ?? [];
 
-  const proposals = apiProposals.length ? apiProposals : mockProposals;
   const filtered = proposals.filter((p) => filter === "all" || p.status === filter);
 
   const handleRun = async () => {
@@ -107,6 +61,8 @@ function RoundPage() {
     try {
       await runEval.mutateAsync(evaluationId);
       void refetchStatus();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Run failed");
     } finally {
       setRunning(false);
     }
@@ -143,6 +99,10 @@ function RoundPage() {
     const winner = proposals[0];
     if (!winner) {
       setMsg("Run evaluation first to select a winner.");
+      return;
+    }
+    if (!granteeAddress.trim()) {
+      setMsg("Grantee Kaspa address required.");
       return;
     }
     try {
@@ -201,6 +161,7 @@ function RoundPage() {
             </div>
             <span className="text-xs font-medium text-muted-foreground">
               {status.complete}/{status.total} complete
+              {status.errors > 0 && ` · ${status.errors} error(s)`}
             </span>
           </div>
         </div>
@@ -239,13 +200,14 @@ function RoundPage() {
             className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
           />
           <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-border pt-4">
-            <div className="flex-1 min-w-[200px]">
+            <div className="min-w-[200px] flex-1">
               <label className="text-xs font-medium text-muted-foreground">
                 Grantee Kaspa address
               </label>
               <input
                 value={granteeAddress}
                 onChange={(e) => setGranteeAddress(e.target.value)}
+                placeholder="kaspatest:qr… or kaspa:qr…"
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
               />
             </div>
@@ -279,41 +241,39 @@ function RoundPage() {
 
       <div className="p-4 sm:p-6 md:p-8">
         <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  <th className="px-5 py-3">Proposal</th>
-                  <th className="px-5 py-3">Tech</th>
-                  <th className="px-5 py-3">Impact</th>
-                  <th className="px-5 py-3">Team</th>
-                  <th className="px-5 py-3">
-                    <span className="inline-flex items-center gap-1">
-                      Overall <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="px-5 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filtered.map((p) => (
-                  <ProposalRow key={p.id} p={p} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {filtered.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              No proposals yet. Upload proposals above, then run evaluation.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                    <th className="px-5 py-3">Proposal</th>
+                    <th className="px-5 py-3">Tech</th>
+                    <th className="px-5 py-3">Impact</th>
+                    <th className="px-5 py-3">Team</th>
+                    <th className="px-5 py-3">
+                      <span className="inline-flex items-center gap-1">
+                        Overall <ArrowUpDown className="h-3 w-3" />
+                      </span>
+                    </th>
+                    <th className="px-5 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filtered.map((p) => (
+                    <ProposalRow key={p.id} p={p} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </div>
     </>
   );
-}
-
-function avgDim(scores: Record<string, unknown>): number {
-  const dims = Object.values(scores).filter(
-    (v): v is { score: number } => typeof v === "object" && v !== null && "score" in v,
-  );
-  if (!dims.length) return 0;
-  return Math.round(dims.reduce((a, d) => a + d.score, 0) / dims.length);
 }
 
 function RubricPill({ label, value }: { label: string; value: string }) {
@@ -327,7 +287,7 @@ function RubricPill({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ProposalRow({ p }: { p: Proposal }) {
+function ProposalRow({ p }: { p: ProposalView }) {
   const tech = p.scores.find((s) => s.agent === "technical")?.score ?? 0;
   const impact = p.scores.find((s) => s.agent === "impact")?.score ?? 0;
   const team = p.scores.find((s) => s.agent === "team")?.score ?? 0;
@@ -337,9 +297,6 @@ function ProposalRow({ p }: { p: Proposal }) {
       <td className="px-5 py-4">
         <Link to="/app/proposals/$id" params={{ id: p.id }} className="block max-w-md">
           <div className="truncate text-sm font-semibold text-foreground">{p.title}</div>
-          <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {p.organization} · {(p.amountKas / 1000).toFixed(0)}K KAS
-          </div>
         </Link>
       </td>
       <ScoreCell v={tech} />

@@ -4,13 +4,14 @@ import sys
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 load_dotenv()
 
@@ -18,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from api.database import engine, get_db
 from api.models import Base
-from api.routes import approvals, escrow, evaluations, milestones, proposals
+from api.routes import approvals, dashboard, escrow, evaluations, milestones, proposals
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,6 +69,7 @@ async def request_id_middleware(request: Request, call_next):
     return response
 
 
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(evaluations.router, prefix="/api/evaluations", tags=["evaluations"])
 app.include_router(proposals.router, prefix="/api/proposals", tags=["proposals"])
 app.include_router(approvals.router, prefix="/api/approvals", tags=["approvals"])
@@ -104,12 +106,43 @@ async def health_kaspa():
 
 
 @app.get("/api/agents")
-async def agent_addresses():
+def agent_addresses(db: Session = Depends(get_db)):
+    from api.models import Proposal
+
+    complete = db.query(Proposal).filter(Proposal.status == "complete").count()
+    pending = db.query(Proposal).filter(Proposal.status == "pending").count()
+
+    catalog = [
+        ("orchestrator", "ORCHESTRATOR_ADDRESS", "argos-orchestrator", "Orchestrator", "Coordinates evaluation pipeline across specialist agents."),
+        ("intake", "INTAKE_ADDRESS", "argos-intake", "Intake", "Ingests proposals from PDF, URL, or text and extracts structure."),
+        ("technical", "TECHNICAL_ADDRESS", "argos-technical", "Technical", "Scores innovation, feasibility, and methodology."),
+        ("impact", "IMPACT_ADDRESS", "argos-impact", "Impact", "Scores scale, sustainability, and counterfactual impact."),
+        ("team", "TEAM_ADDRESS", "argos-team", "Team", "Scores track record, expertise, and risk management."),
+        ("milestone", "MILESTONE_ADDRESS", "argos-milestone", "Milestone", "Verifies milestone deliverables before Kaspa release."),
+    ]
+
+    agents = []
+    online = 0
+    for key, env_key, name, role, description in catalog:
+        addr = os.getenv(env_key, "")
+        if addr:
+            online += 1
+        handled = complete if key in ("technical", "impact", "team", "orchestrator", "milestone") else pending
+        agents.append(
+            {
+                "id": key,
+                "name": name,
+                "role": role,
+                "description": description,
+                "address": addr,
+                "status": "online" if addr else "offline",
+                "proposals_handled": handled,
+            }
+        )
+
     return {
-        "orchestrator": os.getenv("ORCHESTRATOR_ADDRESS", ""),
-        "intake": os.getenv("INTAKE_ADDRESS", ""),
-        "technical": os.getenv("TECHNICAL_ADDRESS", ""),
-        "impact": os.getenv("IMPACT_ADDRESS", ""),
-        "team": os.getenv("TEAM_ADDRESS", ""),
-        "milestone": os.getenv("MILESTONE_ADDRESS", ""),
+        "agents": agents,
+        "online_count": online,
+        "proposals_complete": complete,
+        "proposals_pending": pending,
     }
