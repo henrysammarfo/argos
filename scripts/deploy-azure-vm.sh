@@ -22,6 +22,17 @@ fi
 JWT_SECRET="$(openssl rand -hex 32)"
 POSTGRES_PASSWORD="$(openssl rand -hex 16)"
 
+# Preserve secrets on redeploy (avoid breaking Postgres volume auth)
+PRESERVE_ENV="$(mktemp)"
+scp -i "$SSH_KEY" -o StrictHostKeyChecking=no "${VM_USER}@${VM_IP}:~/argos/.env.production" "$PRESERVE_ENV" 2>/dev/null || true
+if [[ -s "$PRESERVE_ENV" ]]; then
+  old_jwt=$(grep '^JWT_SECRET=' "$PRESERVE_ENV" | cut -d= -f2- || true)
+  old_pg=$(grep '^POSTGRES_PASSWORD=' "$PRESERVE_ENV" | cut -d= -f2- || true)
+  [[ -n "$old_jwt" ]] && JWT_SECRET="$old_jwt"
+  [[ -n "$old_pg" ]] && POSTGRES_PASSWORD="$old_pg"
+fi
+rm -f "$PRESERVE_ENV"
+
 # shellcheck disable=SC1091
 source backend/.env
 
