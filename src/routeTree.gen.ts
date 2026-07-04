@@ -19,6 +19,7 @@ import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSetupRouteImport } from './routes/app.setup'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppEscrowRouteImport } from './routes/app.escrow'
 import { Route as AppAgentsRouteImport } from './routes/app.agents'
@@ -76,6 +77,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSetupRoute = AppSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/app/agents': typeof AppAgentsRoute
   '/app/escrow': typeof AppEscrowRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/setup': typeof AppSetupRoute
   '/app/': typeof AppIndexRoute
   '/app/evaluations/$id': typeof AppEvaluationsIdRoute
   '/app/proposals/$id': typeof AppProposalsIdRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/app/agents': typeof AppAgentsRoute
   '/app/escrow': typeof AppEscrowRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/setup': typeof AppSetupRoute
   '/app': typeof AppIndexRoute
   '/app/evaluations/$id': typeof AppEvaluationsIdRoute
   '/app/proposals/$id': typeof AppProposalsIdRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/app/agents': typeof AppAgentsRoute
   '/app/escrow': typeof AppEscrowRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/setup': typeof AppSetupRoute
   '/app/': typeof AppIndexRoute
   '/app/evaluations/$id': typeof AppEvaluationsIdRoute
   '/app/proposals/$id': typeof AppProposalsIdRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/app/agents'
     | '/app/escrow'
     | '/app/settings'
+    | '/app/setup'
     | '/app/'
     | '/app/evaluations/$id'
     | '/app/proposals/$id'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/app/agents'
     | '/app/escrow'
     | '/app/settings'
+    | '/app/setup'
     | '/app'
     | '/app/evaluations/$id'
     | '/app/proposals/$id'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/app/agents'
     | '/app/escrow'
     | '/app/settings'
+    | '/app/setup'
     | '/app/'
     | '/app/evaluations/$id'
     | '/app/proposals/$id'
@@ -301,6 +313,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/setup': {
+      id: '/app/setup'
+      path: '/setup'
+      fullPath: '/app/setup'
+      preLoaderRoute: typeof AppSetupRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/settings': {
       id: '/app/settings'
       path: '/settings'
@@ -350,6 +369,7 @@ interface AppRouteChildren {
   AppAgentsRoute: typeof AppAgentsRoute
   AppEscrowRoute: typeof AppEscrowRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppSetupRoute: typeof AppSetupRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEvaluationsIdRoute: typeof AppEvaluationsIdRoute
   AppProposalsIdRoute: typeof AppProposalsIdRoute
@@ -360,6 +380,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgentsRoute: AppAgentsRoute,
   AppEscrowRoute: AppEscrowRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppSetupRoute: AppSetupRoute,
   AppIndexRoute: AppIndexRoute,
   AppEvaluationsIdRoute: AppEvaluationsIdRoute,
   AppProposalsIdRoute: AppProposalsIdRoute,
@@ -382,3 +403,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

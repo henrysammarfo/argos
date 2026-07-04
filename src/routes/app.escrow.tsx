@@ -48,9 +48,7 @@ function EscrowPage() {
                       style={{ width: `${pctReleased}%` }}
                     />
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {pctReleased}% released
-                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">{pctReleased}% released</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
@@ -67,7 +65,10 @@ function EscrowPage() {
 
               <ul className="divide-y divide-border">
                 {c.milestones.map((m) => (
-                  <li key={m.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 p-5 md:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
+                  <li
+                    key={m.id}
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 p-5 md:grid-cols-[auto_minmax(0,1fr)_auto_auto]"
+                  >
                     <div
                       className={`grid h-9 w-9 place-items-center rounded-full border-2 ${
                         m.status === "released"
@@ -86,9 +87,7 @@ function EscrowPage() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-foreground">
-                        {m.name}
-                      </div>
+                      <div className="truncate text-sm font-semibold text-foreground">{m.name}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
                         Due {m.dueDate}
                         {m.verifiedAt && ` · verified ${m.verifiedAt}`}

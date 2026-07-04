@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: argos
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: argos
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://argos:password@db:5432/argos
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      KASPA_SIMULATION: "true"
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-dev-key}
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+
+volumes:
+  pgdata:

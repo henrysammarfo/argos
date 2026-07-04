@@ -57,9 +57,9 @@ function AboutPage() {
           <div className="text-xs tracking-wider text-muted-foreground uppercase">Builder</div>
           <div className="mt-2 text-2xl font-medium text-foreground">Henry Sam Marfo</div>
           <p className="mt-3 text-sm text-muted-foreground">
-            github.com/henrysammarfo · Building ARGOS for Demo Day at Imperial College London,
-            July 4 2026. Hackathon stack: Conduct Track (£8K), Fetch.ai Challenge (£500), Kaspa
-            ($1K USDC), GCC Category 1.
+            github.com/henrysammarfo · Building ARGOS for Demo Day at Imperial College London, July
+            4 2026. Hackathon stack: Conduct Track (£8K), Fetch.ai Challenge (£500), Kaspa ($1K
+            USDC), GCC Category 1.
           </p>
         </div>
       </div>

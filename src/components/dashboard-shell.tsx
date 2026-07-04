@@ -19,6 +19,7 @@ import { ArgosMark } from "./argos-logo";
 const NAV = [
   { to: "/app", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/app/evaluations", label: "Evaluations", icon: FileStack, exact: false },
+  { to: "/app/setup", label: "New Round", icon: FileStack, exact: true },
   { to: "/app/agents", label: "Agents", icon: Cpu, exact: false },
   { to: "/app/escrow", label: "Escrow", icon: Coins, exact: false },
   { to: "/app/settings", label: "Settings", icon: Settings, exact: false },
@@ -32,7 +33,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
   return (
-    <div className="theme-stripe flex min-h-dvh bg-background text-foreground">
+    <div className="theme-console-dark flex min-h-dvh bg-background text-foreground">
       {/* Sidebar — desktop */}
       <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <SidebarInner isActive={isActive} onNavigate={() => setMobileOpen(false)} />
@@ -243,29 +244,15 @@ export function PageHeader({
 
 // Reusable primitives so app pages stay visually consistent.
 
-export function Card({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div
-      className={`rounded-xl border border-border bg-card shadow-sm ${className}`}
-    >
+    <div className={`rounded-xl border border-border bg-card shadow-sm ${className}`}>
       {children}
     </div>
   );
 }
 
-export function CardHeader({
-  title,
-  action,
-}: {
-  title: ReactNode;
-  action?: ReactNode;
-}) {
+export function CardHeader({ title, action }: { title: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-border px-5 py-4">
       <div className="text-sm font-semibold text-foreground">{title}</div>

@@ -84,9 +84,7 @@ function PricingPage() {
           {tiers.map((t) => (
             <div
               key={t.name}
-              className={`liquid-glass rounded-2xl p-8 ${
-                t.highlight ? "ring-2 ring-primary" : ""
-              }`}
+              className={`liquid-glass rounded-2xl p-8 ${t.highlight ? "ring-2 ring-primary" : ""}`}
             >
               <div className="relative z-10">
                 {t.highlight && (

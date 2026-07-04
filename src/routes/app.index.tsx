@@ -55,8 +55,18 @@ function OverviewPage() {
 
       {/* KPI grid */}
       <div className="grid gap-4 p-4 sm:p-6 md:grid-cols-2 md:p-8 xl:grid-cols-4">
-        <Kpi label="Active rounds" value={active.length.toString()} delta="+1 this week" icon={FileStack} />
-        <Kpi label="Proposals in flight" value={totalProposals.toString()} delta="+14 vs last week" icon={FileStack} />
+        <Kpi
+          label="Active rounds"
+          value={active.length.toString()}
+          delta="+1 this week"
+          icon={FileStack}
+        />
+        <Kpi
+          label="Proposals in flight"
+          value={totalProposals.toString()}
+          delta="+14 vs last week"
+          icon={FileStack}
+        />
         <Kpi
           label="Flagged for review"
           value={totalFlagged.toString()}
@@ -106,10 +116,7 @@ function OverviewPage() {
           <CardHeader
             title="Agent health"
             action={
-              <Link
-                to="/app/agents"
-                className="text-xs font-medium text-primary hover:underline"
-              >
+              <Link to="/app/agents" className="text-xs font-medium text-primary hover:underline">
                 View all
               </Link>
             }
@@ -166,7 +173,8 @@ function OverviewPage() {
           <div className="divide-y divide-border">
             {evaluations.map((e) => {
               const props = proposalsFor(e.id);
-              const approvedRatio = props.filter((p) => p.status === "approved").length / Math.max(props.length, 1);
+              const approvedRatio =
+                props.filter((p) => p.status === "approved").length / Math.max(props.length, 1);
               return (
                 <Link
                   key={e.id}

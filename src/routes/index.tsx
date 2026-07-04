@@ -90,8 +90,8 @@ function Home() {
             A committee that never gets tired.
           </h2>
           <p className="mt-4 text-base text-muted-foreground">
-            Upload the round. Watch fifty proposals move through the same rubric, in parallel,
-            with reasoning attached to every score.
+            Upload the round. Watch fifty proposals move through the same rubric, in parallel, with
+            reasoning attached to every score.
           </p>
         </div>
 
@@ -126,8 +126,8 @@ function Home() {
                 Five agents. One rubric. Every proposal.
               </h2>
               <p className="mt-3 text-muted-foreground">
-                Registered on Agentverse, discoverable via ASI:One, wired to Anthropic Claude
-                for reasoning.
+                Registered on Agentverse, discoverable via ASI:One, wired to Anthropic Claude for
+                reasoning.
               </p>
             </div>
             <Link

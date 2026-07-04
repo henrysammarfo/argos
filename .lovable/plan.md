@@ -1,4 +1,3 @@
-
 # ARGOS — Brand, Marketing Site & Dashboard
 
 Build the full ARGOS frontend (Lovable side of the hackathon stack) using the flowpath template you supplied as the visual language: cinematic dark video hero, liquid-glass nav & buttons, Helvetica Now Text, Lucide icons. Backend integration (FastAPI/Fetch.ai/Kaspa) is out of scope for this build — all pages render with realistic mock data so the demo is self-contained.
@@ -6,12 +5,14 @@ Build the full ARGOS frontend (Lovable side of the hackathon stack) using the fl
 ## 1. Brand system
 
 **Name / mark:** ARGOS — the many-eyed watcher. The logo is an inline SVG "iris + aperture" mark: a geometric hexagonal aperture around a central pupil, drawn in stroke-only so it prints clean on hoodies, tote bags, embroidery, and stickers. Two lockups:
+
 - Horizontal: mark + `ARGOS` wordmark in medium tracking-tight
 - Standalone mark for favicon / merch chest hit / social avatar
 
 **Wordmark font:** Helvetica Now Text (loaded via the CDN URL from the template), fallback Apple system stack. Set globally in `styles.css`.
 
 **Palette (dark-first, matches the video-hero aesthetic):**
+
 - `--background` near-black `oklch(0.14 0.01 260)`
 - `--foreground` warm white `oklch(0.98 0.005 90)`
 - `--primary` signal amber `oklch(0.78 0.16 70)` (the "watcher eye" accent — reads well on merch)
@@ -22,6 +23,7 @@ Build the full ARGOS frontend (Lovable side of the hackathon stack) using the fl
 All colors added to `src/styles.css` as semantic tokens — no hardcoded `text-white`/`bg-black` in components.
 
 **Reusable primitives:**
+
 - `LiquidGlass` utility class (from the template spec) + `.animate-dropdown`, `.duration-400` keyframes
 - `<ArgosLogo />` component (SVG mark + wordmark, `size` + `markOnly` props)
 - `<SiteNav />` — flowpath-style top nav with hover dropdowns and mobile slide-in
@@ -34,6 +36,7 @@ All colors added to `src/styles.css` as semantic tokens — no hardcoded `text-w
 ## 2. Routes
 
 Marketing (public, video-hero language):
+
 - `/` — Home. Flowpath-spec hero rebuilt for ARGOS: heading "Evaluate every proposal. Miss nothing." Subhead about 6 weeks → 8 hours. CTAs "Open the console" / "Watch the demo". Below hero: How it works (3 steps), Agent lineup (5 Fetch.ai agents as cards), Kaspa escrow explainer, Numbers strip (25×, 6wk→8h, 300h→12h), CTA band, footer.
 - `/product` — Deeper product tour. Sections: Intake, Multi-agent scoring, Human-in-the-loop review, Milestone escrow. Uses the same video hero, tighter copy.
 - `/agents` — The five agents (Orchestrator, Intake, Technical, Impact, Team, Milestone) as detailed cards with responsibilities, inputs, outputs, and an "on Agentverse" badge.
@@ -44,6 +47,7 @@ Marketing (public, video-hero language):
 - `/login` — Simple glass card form (UI only, no auth wired).
 
 Application (dashboard shell, same brand):
+
 - `/app` — Overview: active rounds, KPIs, recent activity, agent health.
 - `/app/evaluations` — List of evaluation rounds with status chips.
 - `/app/evaluations/$id` — Single round: proposal table with per-agent scores, filters, "flagged for review" bucket.
@@ -67,6 +71,7 @@ Product / Agents / Escrow pages reuse `<VideoHero>` with the same video and diff
 `DashboardShell`: left sidebar (mark + nav items with Lucide icons + active state), topbar (round switcher, search, notifications, avatar). Content area uses shadcn `Card`, `Table`, `Badge`, `Tabs`, `Progress`, `Dialog` styled against the dark tokens. All data mocked in `src/lib/mock-data.ts` so pages are demo-ready.
 
 Signature dashboard views:
+
 - Evaluation detail: sortable proposal table, per-agent score columns with mini bar, click row → drawer with reasoning
 - Proposal detail: 4-column agent breakdown (Technical / Impact / Team / Milestone) with rationale text and Approve / Override / Flag buttons
 - Escrow: milestone timeline component with locked/released chips

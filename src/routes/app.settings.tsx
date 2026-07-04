@@ -61,9 +61,7 @@ function RubricPanel() {
   return (
     <Card className="p-5 md:col-span-2">
       <div className="text-sm font-semibold text-foreground">Default rubric weights</div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Must sum to 100. Applied to new rounds.
-      </p>
+      <p className="mt-1 text-xs text-muted-foreground">Must sum to 100. Applied to new rounds.</p>
       <div className="mt-6 space-y-5 max-w-md">
         {[
           { label: "Technical", v: 35 },

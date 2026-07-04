@@ -54,13 +54,7 @@ export function SiteFooter() {
   );
 }
 
-function FooterCol({
-  title,
-  links,
-}: {
-  title: string;
-  links: { label: string; to: string }[];
-}) {
+function FooterCol({ title, links }: { title: string; links: { label: string; to: string }[] }) {
   return (
     <div>
       <div className="mb-4 text-xs font-semibold tracking-wider text-foreground uppercase">

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, Card } from "@/components/dashboard-shell";
-import { agents } from "@/lib/mock-data";
+import { agents as mockAgents } from "@/lib/mock-data";
+import { useAgentAddresses } from "@/lib/api-hooks";
 import { ArgosMark } from "@/components/argos-logo";
 import { Radio, Copy } from "lucide-react";
 
@@ -11,7 +12,30 @@ export const Route = createFileRoute("/app/agents")({
   component: AgentsPage,
 });
 
+const AGENT_KEYS = [
+  { id: "orchestrator", role: "Orchestrator", name: "argos-orchestrator" },
+  { id: "intake", role: "Intake", name: "argos-intake" },
+  { id: "technical", role: "Technical", name: "argos-technical" },
+  { id: "impact", role: "Impact", name: "argos-impact" },
+  { id: "team", role: "Team", name: "argos-team" },
+  { id: "milestone", role: "Milestone", name: "argos-milestone" },
+] as const;
+
 function AgentsPage() {
+  const { data: addresses } = useAgentAddresses();
+
+  const agents = AGENT_KEYS.map((key, i) => {
+    const mock = mockAgents[i] ?? mockAgents[0];
+    const addr = addresses?.[key.id as keyof typeof addresses] ?? mock.address;
+    return {
+      ...mock,
+      id: key.id,
+      role: key.role,
+      name: key.name,
+      address: addr || "Not registered — run agent and set env var",
+      status: addr ? ("online" as const) : ("offline" as const),
+    };
+  });
   const online = agents.filter((a) => a.status === "online").length;
   const degraded = agents.filter((a) => a.status === "degraded").length;
   const totalHandled = agents.reduce((a, b) => a + b.proposalsHandled, 0);

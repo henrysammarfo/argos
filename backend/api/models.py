@@ -1,0 +1,117 @@
+from datetime import datetime
+import uuid
+
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import declarative_base, relationship
+
+Base = declarative_base()
+
+
+def gen_id() -> str:
+    return str(uuid.uuid4())
+
+
+class Evaluation(Base):
+    __tablename__ = "evaluations"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    rubric = Column(Text, nullable=False)  # JSON string
+    grant_amount_kas = Column(Float, nullable=True)
+    milestones = Column(Text, nullable=True)  # JSON string
+    status = Column(String, default="active")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    proposals = relationship("Proposal", back_populates="evaluation")
+
+
+class Proposal(Base):
+    __tablename__ = "proposals"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    evaluation_id = Column(String, ForeignKey("evaluations.id"), nullable=False)
+
+    title = Column(String, nullable=False)
+    source_type = Column(String)
+    source_url = Column(String, nullable=True)
+    raw_text = Column(Text, nullable=True)
+
+    team_summary = Column(Text, nullable=True)
+    objectives = Column(Text, nullable=True)
+    methodology = Column(Text, nullable=True)
+    budget_requested = Column(String, nullable=True)
+    timeline = Column(String, nullable=True)
+
+    technical_scores = Column(Text, nullable=True)  # JSON
+    impact_scores = Column(Text, nullable=True)
+    team_scores = Column(Text, nullable=True)
+    red_flags = Column(Text, nullable=True)
+
+    overrides = Column(Text, default="[]")
+
+    total_score = Column(Float, nullable=True)
+    rank = Column(Integer, nullable=True)
+    status = Column(String, default="pending")
+
+    evaluation = relationship("Evaluation", back_populates="proposals")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    evaluated_at = Column(DateTime, nullable=True)
+
+
+class Approval(Base):
+    __tablename__ = "approvals"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    proposal_id = Column(String, ForeignKey("proposals.id"), nullable=False)
+    evaluator = Column(String, nullable=True)
+    action = Column(String, nullable=False)
+    dimension = Column(String, nullable=True)
+    original_score = Column(Float, nullable=True)
+    new_score = Column(Float, nullable=True)
+    reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class KaspaEscrow(Base):
+    __tablename__ = "kaspa_escrows"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    evaluation_id = Column(String, ForeignKey("evaluations.id"), nullable=False)
+    grantee_proposal_id = Column(String, ForeignKey("proposals.id"), nullable=False)
+
+    total_kas = Column(Float, nullable=False)
+    escrow_address = Column(String, nullable=True)
+    lock_tx_hash = Column(String, nullable=True)
+
+    milestones = Column(Text, nullable=False)  # JSON
+    status = Column(String, default="pending")
+
+    grantee_kas_address = Column(String, nullable=False)
+    program_admin_kas_address = Column(String, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class MilestoneSubmission(Base):
+    __tablename__ = "milestone_submissions"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    escrow_id = Column(String, ForeignKey("kaspa_escrows.id"), nullable=False)
+    milestone_index = Column(Integer, nullable=False)
+
+    report_text = Column(Text, nullable=False)
+    report_url = Column(String, nullable=True)
+
+    ai_verdict = Column(String, nullable=True)
+    ai_evidence = Column(Text, nullable=True)
+    ai_completion_pct = Column(Float, nullable=True)
+
+    human_approved = Column(Boolean, nullable=True)
+    human_note = Column(Text, nullable=True)
+
+    release_tx_hash = Column(String, nullable=True)
+    kas_released = Column(Float, nullable=True)
+
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+    verified_at = Column(DateTime, nullable=True)

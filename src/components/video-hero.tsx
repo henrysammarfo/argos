@@ -71,12 +71,7 @@ export function VideoHero({ children, fullscreen = true }: VideoHeroProps) {
           onFocus={handlePause}
           onBlur={handlePlay}
         >
-          <track
-            kind="descriptions"
-            srcLang="en"
-            label="Description"
-            default
-          />
+          <track kind="descriptions" srcLang="en" label="Description" default />
         </video>
       )}
 
