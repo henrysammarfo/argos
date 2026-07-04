@@ -1,0 +1,64 @@
+# ARGOS on shared Azure VM — isolated from Veil (8080/8787) and Magmos (8081/8788).
+# Usage: docker compose -f docker-compose.azure.yml up -d --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: argos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: argos
+    volumes:
+      - argos_pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U argos -d argos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.production
+    environment:
+      ENV: production
+      DATABASE_URL: postgresql://argos:${POSTGRES_PASSWORD}@postgres:5432/argos
+      WEB_CONCURRENCY: "2"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/ready')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  agents:
+    build:
+      context: ./backend
+    command: python agents/run_mailbox_agents.py
+    env_file:
+      - .env.production
+    environment:
+      ENV: production
+      DATABASE_URL: postgresql://argos:${POSTGRES_PASSWORD}@postgres:5432/argos
+      USE_AGENTVERSE_MAILBOX: "true"
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  argos_pg_data:

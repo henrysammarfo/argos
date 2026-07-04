@@ -6,7 +6,7 @@
 | ----- | ----------- | ---- |
 | **Frontend** | [Vercel](https://vercel.com) Hobby | $0 |
 | **PostgreSQL** | [Neon](https://neon.tech) free tier | $0 |
-| **API + uAgents** | See **Option A** (Oracle VM) or **Option B** (Fly.io) below | $0 or low |
+| **API + uAgents** | **Option A** Azure VM, **Option B** Oracle, or **Option C** Fly.io | $0 or low |
 
 ---
 
@@ -24,7 +24,45 @@ Agents worker (same VPS or 2nd Fly app) → Agentverse mailbox 24/7
 
 ---
 
-## Option A — Fully free 24/7 (recommended)
+## Option A — Azure VM (shared with Veil/Magmos)
+
+If you already have an Azure VM (e.g. `51.103.219.168`), deploy ARGOS in **`~/argos` only** on port **8000**. Veil keeps `8080`/`8787`; Magmos keeps `8081`/`8788`.
+
+### 1. Open NSG port 8000
+
+Azure Portal → VM → Networking → add inbound rule: **TCP 8000** from `Any` (demo) or your IP.
+
+### 2. Deploy from your machine
+
+```bash
+# backend/.env must have OPENAI, Kaspa, Agentverse keys
+export ARGOS_SSH_KEY=/path/to/veil-azure-key.pem
+export ARGOS_VM_IP=51.103.219.168
+chmod +x scripts/deploy-azure-vm.sh
+./scripts/deploy-azure-vm.sh
+```
+
+Uses `docker-compose.azure.yml` (Postgres + API + agents in Docker). **Does not touch** `~/veil` or `~/magmoslabs-app`.
+
+### 3. Verify
+
+```bash
+curl http://YOUR_VM_IP:8000/api/health/ready
+curl http://YOUR_VM_IP:8000/api/health
+```
+
+### 4. Vercel frontend → see [Vercel deploy](#vercel-frontend-deploy) below. Then update CORS on VM:
+
+```bash
+ssh -i veil-azure-key.pem azureuser@YOUR_VM_IP
+cd ~/argos
+nano .env.production   # CORS_ORIGINS=https://your-app.vercel.app
+docker compose -f docker-compose.azure.yml up -d
+```
+
+---
+
+## Option B — Fully free 24/7 (Oracle VM)
 
 **Vercel + Neon + Oracle Cloud Always Free VM**
 
@@ -97,7 +135,31 @@ docker compose -f docker-compose.prod.yml up -d
 
 ---
 
-## Option B — Fly.io + Neon (easier CLI, small cost possible)
+## Vercel frontend deploy
+
+1. Go to [vercel.com/new](https://vercel.com/new) → **Import** `henrysammarfo/argos`
+2. Branch: `main` (after merge) or `cursor/argos-full-production-fb4a` for preview
+3. Framework: **TanStack Start** (auto-detected from `vercel.json`)
+4. **Environment variables** (Production):
+
+| Name | Value |
+| ---- | ----- |
+| `VITE_API_BASE_URL` | `http://YOUR_VM_IP:8000/api` or `https://api.yourdomain.com/api` |
+| `VITE_USE_MOCK` | `false` |
+
+5. Deploy → copy your Vercel URL (e.g. `https://argos-xxx.vercel.app`)
+6. Update VM `.env.production`: `CORS_ORIGINS` and `FRONTEND_URL` = that URL (no trailing slash)
+7. Redeploy API container: `docker compose -f docker-compose.azure.yml up -d`
+
+**Build settings** (usually auto):
+
+- Install: `npm ci`
+- Build: `npm run build`
+- Output: handled by Nitro Vercel preset (`vite.config.ts`)
+
+---
+
+## Option C — Fly.io + Neon (easier CLI, small cost possible)
 
 Fly may charge a few dollars/month depending on usage; still much cheaper than Render Starter × 3.
 
@@ -147,7 +209,7 @@ Set `VITE_API_BASE_URL=https://argos-api.fly.dev/api`
 
 ---
 
-## Option C — Render (paid)
+## Option D — Render (paid)
 
 Render **free tier sleeps**; **Starter is ~$7/mo per service**. Only use if you want zero DevOps.
 

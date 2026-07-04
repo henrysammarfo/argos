@@ -58,7 +58,7 @@ python3 agents/test_asi_one.py
 
 - [ ] **3-minute demo video** (screen recording)
 - [ ] **DoraHacks BUIDL** entry + thumbnail
-- [ ] **Live URL** — Vercel frontend + Render backend ([docs/DEPLOY.md](./DEPLOY.md))
+- [ ] **Live URL** — Vercel frontend + Azure VM backend ([docs/DEPLOY.md](./DEPLOY.md))
 - [ ] **ASI:One shared session URL** from browser chat after agents indexed
 - [ ] Run Agentverse **agent evaluation** in dashboard (boosts ASI:One ranking)
 
@@ -68,8 +68,8 @@ python3 agents/test_asi_one.py
 |---------|----------|------|
 | Frontend | Vercel Hobby | $0 |
 | PostgreSQL | Neon free | $0 |
-| API + uAgents 24/7 | **Oracle Cloud Free VM** + `docker-compose.prod.yml` | $0 |
-| Alt backend | Fly.io + Neon | $0–5/mo |
+| API + uAgents 24/7 | **Azure VM** `~/argos` + `docker-compose.azure.yml` | $0 |
+| Alt backend | Oracle / Fly.io + Neon | $0–5/mo |
 
 Paid fallback: Render Starter (~$21/mo) — `render.yaml`.
 

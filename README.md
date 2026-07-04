@@ -70,23 +70,21 @@ python3 agents/test_asi_one.py
 
 See [docs/SUBMISSION_STATUS.md](docs/SUBMISSION_STATUS.md) for Agentverse profile URLs and hackathon checklist.
 
-## Production deploy (Vercel + free backend)
+## Production deploy (Vercel + Azure VM)
 
-| Component | Free option |
-| --------- | ----------- |
+| Component | Platform |
+| --------- | -------- |
 | Frontend | **Vercel** (Hobby, $0) |
-| PostgreSQL | **Neon** (free tier) |
-| API + uAgents 24/7 | **Oracle Cloud Free VM** + `docker-compose.prod.yml` |
-
-**Paid alternative:** Render (~$21/mo) — see `render.yaml`.
+| API + Postgres + uAgents | **Azure VM** `~/argos` — `docker-compose.azure.yml` |
+| Alt Postgres | **Neon** free tier (Oracle/Fly stacks) |
 
 Full guide: **[docs/DEPLOY.md](docs/DEPLOY.md)**
 
-Quick path ($0):
+Quick path:
 
-1. Neon → copy `DATABASE_URL`
-2. Oracle Always Free VM → `docker compose -f docker-compose.prod.yml up -d`
-3. Vercel → `VITE_API_BASE_URL=http://VM_IP:8000/api`
+1. `./scripts/deploy-azure-vm.sh` → API on `:8000` (does not touch Veil/Magmos folders)
+2. Open Azure NSG port **8000**
+3. Vercel → `VITE_API_BASE_URL=http://VM_IP:8000/api`, `VITE_USE_MOCK=false`
 4. Set `CORS_ORIGINS` on VM to your Vercel URL
 
 ## API Keys Required
