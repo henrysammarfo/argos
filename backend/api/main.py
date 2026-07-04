@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from api.database import engine, get_db
 from api.models import Base
-from api.routes import approvals, dashboard, escrow, evaluations, milestones, proposals
+from api.routes import approvals, auth_routes, dashboard, escrow, evaluations, milestones, proposals
 
 logging.basicConfig(
     level=logging.INFO,
@@ -69,6 +69,7 @@ async def request_id_middleware(request: Request, call_next):
     return response
 
 
+app.include_router(auth_routes.router, prefix="/api/auth", tags=["auth"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(evaluations.router, prefix="/api/evaluations", tags=["evaluations"])
 app.include_router(proposals.router, prefix="/api/proposals", tags=["proposals"])

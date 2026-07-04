@@ -107,7 +107,7 @@ export function SiteNav({ transparent = true }: { transparent?: boolean }) {
             Log in
           </Link>
           <Link
-            to="/app"
+            to="/login"
             className="liquid-glass rounded-full px-5 py-2 text-sm font-medium text-foreground"
           >
             Open console
@@ -185,7 +185,7 @@ export function SiteNav({ transparent = true }: { transparent?: boolean }) {
               Log in
             </Link>
             <Link
-              to="/app"
+              to="/login"
               className="liquid-glass rounded-full px-5 py-2 text-center text-sm font-medium text-foreground"
               onClick={() => setMobile(false)}
             >

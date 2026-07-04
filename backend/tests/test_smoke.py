@@ -71,6 +71,31 @@ def test_run_requires_openai():
     assert run_r.status_code == 503
 
 
+def test_auth_login_valid():
+    r = client.post(
+        "/api/auth/login",
+        json={"admin_key": "test-admin-key", "email": "admin@test.org"},
+    )
+    assert r.status_code == 200
+    assert r.json()["authenticated"] is True
+
+
+def test_auth_login_invalid():
+    r = client.post("/api/auth/login", json={"admin_key": "wrong-key"})
+    assert r.status_code == 401
+
+
+def test_auth_session_no_key():
+    r = client.get("/api/auth/session")
+    assert r.status_code == 401
+
+
+def test_auth_session_valid():
+    r = client.get("/api/auth/session", headers={"X-Admin-Key": "test-admin-key"})
+    assert r.status_code == 200
+    assert r.json()["authenticated"] is True
+
+
 def test_agents_endpoint():
     r = client.get("/api/agents")
     assert r.status_code == 200

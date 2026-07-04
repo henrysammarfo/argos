@@ -2,17 +2,25 @@
  * ARGOS typed API client — all requests hit the live FastAPI backend.
  */
 
+import { clearAuthSession, getAdminKeyForRequest } from "./auth";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_API_KEY ?? "";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
-  if (ADMIN_KEY) headers["X-Admin-Key"] = ADMIN_KEY;
+  const adminKey = getAdminKeyForRequest();
+  if (adminKey) headers["X-Admin-Key"] = adminKey;
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  if (res.status === 401 && typeof window !== "undefined") {
+    clearAuthSession();
+    const redirect = encodeURIComponent(window.location.pathname);
+    window.location.href = `/login?redirect=${redirect}`;
+    throw new Error("Session expired — please log in again");
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail));

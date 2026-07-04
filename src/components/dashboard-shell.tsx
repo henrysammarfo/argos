@@ -19,6 +19,9 @@ import {
 import { ArgosMark } from "./argos-logo";
 import { useConsoleTheme, themeClassName } from "@/lib/console-theme";
 import { useHealthCheck } from "@/lib/api-hooks";
+import { useAuth } from "@/lib/auth-context";
+import { useNavigate } from "@tanstack/react-router";
+import { LogOut } from "lucide-react";
 
 const NAV = [
   { to: "/app", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -34,7 +37,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useConsoleTheme();
   const { data: health } = useHealthCheck();
+  const { email, logout } = useAuth();
+  const navigate = useNavigate();
   const apiOnline = health?.status === "ok";
+
+  const initials = email ? email.split("@")[0].slice(0, 2).toUpperCase() : "AD";
+
+  const handleLogout = () => {
+    logout();
+    void navigate({ to: "/login" });
+  };
 
   const isActive = (to: string, exact: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
@@ -120,11 +132,22 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <Bell className="h-4 w-4" />
               <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
             </button>
-            <button className="ml-1 inline-flex items-center gap-2 rounded-full border border-border bg-background py-1 pr-3 pl-1 text-sm text-foreground shadow-sm hover:bg-muted">
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Log out"
+              className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              className="ml-1 inline-flex items-center gap-2 rounded-full border border-border bg-background py-1 pr-3 pl-1 text-sm text-foreground shadow-sm hover:bg-muted"
+            >
               <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                KA
+                {initials}
               </span>
-              <span className="hidden sm:inline">Kwame</span>
+              <span className="hidden max-w-[120px] truncate sm:inline">{email.split("@")[0]}</span>
               <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground sm:inline" />
             </button>
           </div>

@@ -268,7 +268,9 @@ function ApiPanel() {
         <div className="text-sm font-semibold text-foreground">Frontend env</div>
         <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-muted/40 p-4 font-mono text-xs text-foreground">
           {`VITE_API_BASE_URL=http://localhost:8000/api
-VITE_ADMIN_API_KEY=<same as backend ADMIN_API_KEY>`}
+
+# Admin key is entered at /login — stored in sessionStorage.
+# Must match backend ADMIN_API_KEY.`}
         </pre>
       </Card>
     </>

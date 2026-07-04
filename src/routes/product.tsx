@@ -138,7 +138,7 @@ function ProductPage() {
             The console ships with 47 real climate-round proposals for you to walk through.
           </p>
           <Link
-            to="/app"
+            to="/login"
             className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
             Open the console <ArrowRight className="h-4 w-4" />

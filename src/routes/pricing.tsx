@@ -111,7 +111,7 @@ function PricingPage() {
                 </ul>
 
                 <Link
-                  to="/app"
+                  to="/login"
                   className={`mt-10 block rounded-full px-6 py-3 text-center text-sm font-semibold ${
                     t.highlight
                       ? "bg-primary text-primary-foreground hover:bg-primary/90"
