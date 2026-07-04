@@ -21,7 +21,7 @@ See [docs/ARGOS_ARCHITECTURE.md](docs/ARGOS_ARCHITECTURE.md) for full diagram.
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env — OPENAI_API_KEY, ADMIN_API_KEY, Kaspa keys, etc.
+# Edit .env — OPENAI_API_KEY, JWT_SECRET, Kaspa keys, etc.
 
 pip install -r requirements.txt
 
@@ -36,7 +36,7 @@ uvicorn api.main:app --reload --port 8000
 ```bash
 bun install
 cp .env.example .env
-# Set VITE_API_BASE_URL and VITE_ADMIN_API_KEY
+# Set VITE_API_BASE_URL (sign up at /signup — JWT auth, no admin key)
 
 bun run dev
 # Open http://localhost:5173
@@ -75,12 +75,13 @@ See [docs/SUBMISSION_STATUS.md](docs/SUBMISSION_STATUS.md) for Agentverse profil
 | Key | Required | Purpose |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | **Yes** | GPT-4o scoring — no fallback |
-| `ADMIN_API_KEY` | **Yes** | Protect mutations + frontend |
+| `JWT_SECRET` | **Yes** | Session tokens (email/password auth) |
 | `ASI_ONE_API_KEY` | Recommended | ASI:One discovery |
 | `AGENTVERSE_API_KEY` | Recommended | Agent registration |
 | `KASPA_PRIVATE_KEY` | For releases | Testnet milestone sends |
 | `ESCROW_WALLET_ADDRESS` | For escrow | Deposit address |
 | `DATABASE_URL` | Yes | PostgreSQL or SQLite |
+| `SMTP_*` | Optional | Email verification codes |
 
 See [docs/API_KEYS.md](docs/API_KEYS.md) for step-by-step key acquisition.
 

@@ -17,6 +17,7 @@ from services.auth_service import (
     hash_password,
     verify_password,
 )
+from services.email_service import send_verification_email, smtp_configured
 
 router = APIRouter()
 
@@ -98,10 +99,13 @@ def register(body: RegisterRequest, request: Request, db: Session = Depends(get_
 
     token = create_access_token(user_id=user.id, organization_id=org.id, email=user.email)
     resp = _user_response(user, org, token)
-    if expose_verification_codes():
+    emailed = send_verification_email(to_email=user.email, code=code, org_name=org.name)
+    if expose_verification_codes() and not emailed:
         resp["verification_code"] = code
+    elif emailed:
+        resp["message"] = "Account created. Check your email for the verification code."
     else:
-        resp["message"] = "Account created. Check your email for a verification code."
+        resp["message"] = "Account created. Check Settings → Account for verification (SMTP not configured)."
     return resp
 
 
@@ -176,11 +180,12 @@ def resend_verification(
     code = generate_verification_code()
     db_user.verification_code = code
     db.commit()
+    emailed = send_verification_email(to_email=db_user.email, code=code, org_name=user.organization_name)
     resp: dict = {
         "email_verified": False,
-        "message": "Verification code sent." if not expose_verification_codes() else "Verification code regenerated.",
+        "message": "Verification code sent to your email." if emailed else "Verification code regenerated.",
     }
-    if expose_verification_codes():
+    if expose_verification_codes() and not emailed:
         resp["verification_code"] = code
     return resp
 

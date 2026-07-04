@@ -9,10 +9,11 @@ from typing import Any, Optional
 
 import httpx
 
+from services.kaspa_network import deposit_instructions, explorer_tx_url, sdk_network_id
+
 logger = logging.getLogger(__name__)
 
 KASPA_NODE = os.getenv("KASPA_NODE_URL", "https://api.kaspa.org")
-KASPA_NETWORK = os.getenv("KASPA_NETWORK", "mainnet")
 
 
 async def get_balance(address: str) -> float:
@@ -32,7 +33,7 @@ async def get_transaction(tx_hash: str) -> dict[str, Any]:
 
 async def verify_deposit(escrow_address: str, expected_amount_kas: float) -> dict[str, Any]:
     actual = await get_balance(escrow_address)
-    tolerance = expected_amount_kas * 0.01
+    tolerance = max(expected_amount_kas * 0.01, 0.0001)
     verified = actual >= (expected_amount_kas - tolerance)
 
     deposit_tx = None
@@ -53,6 +54,7 @@ async def verify_deposit(escrow_address: str, expected_amount_kas: float) -> dic
         "actual_balance_kas": actual,
         "expected_kas": expected_amount_kas,
         "deposit_tx": deposit_tx,
+        "explorer_tx_url": explorer_tx_url(deposit_tx) if deposit_tx else None,
     }
 
 
@@ -89,7 +91,7 @@ async def _send_via_sdk(
         except ImportError:
             raise RuntimeError("kaspa package not installed — pip install kaspa")
 
-        network_id = KASPA_NETWORK if KASPA_NETWORK != "kaspatest" else "testnet"
+        network_id = sdk_network_id()
         wallet = Wallet(resolver=Resolver(), network_id=network_id)
 
         seed = os.getenv("KASPA_SEED_PHRASE", "")
@@ -147,3 +149,6 @@ async def return_to_admin(
 ) -> str:
     note = f"ARGOS Grant #{escrow_id} Milestone {milestone_index + 1} RETURNED: {reason}"
     return await send_kaspa(escrow_address, admin_address, kas_amount, note)
+
+
+__all__ = ["deposit_instructions", "explorer_tx_url"]

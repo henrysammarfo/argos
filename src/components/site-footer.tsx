@@ -38,7 +38,7 @@ export function SiteFooter() {
             title="Stack"
             links={[
               { label: "Fetch.ai uAgents", to: "/agents" },
-              { label: "Anthropic Claude", to: "/product" },
+              { label: "OpenAI GPT-4o", to: "/product" },
               { label: "Kaspa escrow", to: "/escrow" },
               { label: "GCC Category 1", to: "/about" },
             ]}

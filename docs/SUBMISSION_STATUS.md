@@ -7,9 +7,10 @@ Last updated: 2026-07-04
 | Track | Status | Notes |
 |-------|--------|-------|
 | **GitHub + docs** | ✅ | Live API, multi-tenant auth, docker-compose, CI |
-| **Conduct (enterprise)** | ✅ | Full console: rounds, scoring, override, audit, Kaspa escrow |
-| **Kaspa** | ✅ | Testnet keys configured; real balance + release flow |
-| **Fetch.ai / Agentverse** | ✅ | **6/6 agents registered** with Chat Protocol + mailbox |
+| **Conduct (enterprise)** | ✅ | Console + audit trail UI, override with reason, Kaspa escrow |
+| **Kaspa** | ✅ | tn10 testnet; explorer links; backend-signed releases |
+| **Fetch.ai / Agentverse** | ✅ | **6/6 agents registered**; FET payment ledger |
+| **GCC** | ✅ | Public capital allocation panel on dashboard |
 | **ASI:One discovery** | ⚠️ | Agents live on Agentverse; ASI:One indexing may take time — use profile URLs or `@argos_orchestrator` in [asi1.ai](https://asi1.ai) chat |
 
 ## Agentverse agents (paste in Fetch.ai submission)

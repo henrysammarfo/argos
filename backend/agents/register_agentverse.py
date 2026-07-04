@@ -126,6 +126,7 @@ def main() -> int:
                 metadata={
                     "categories": spec["categories"],
                     "is_public": "True",
+                    "handle": spec["name"].replace("argos-", "argos_"),
                 },
                 agentverse_config=config,
             )

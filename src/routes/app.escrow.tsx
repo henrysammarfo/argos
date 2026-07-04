@@ -4,6 +4,7 @@ import { ApiError, ApiLoading } from "@/components/api-state";
 import { useEscrows, useApproveMilestone } from "@/lib/api-hooks";
 import { CheckCircle2, LoaderCircle, Lock, ExternalLink, Coins } from "lucide-react";
 import { useState } from "react";
+import { kaspaExplorerAddressUrl, kaspaExplorerTxUrl } from "@/lib/kaspa";
 
 export const Route = createFileRoute("/app/escrow")({
   head: () => ({
@@ -127,9 +128,7 @@ function ApiEscrowCard({
     .filter((m) => m.status === "released")
     .reduce((s, m) => s + (m.kas_amount ?? 0), 0);
   const pct = Math.round((released / escrow.total_kas) * 100) || 0;
-  const explorerBase = escrow.escrow_address.startsWith("kaspatest:")
-    ? "https://explorer-tn10.kaspa.org/addresses"
-    : "https://explorer.kaspa.org/addresses";
+  const explorerUrl = kaspaExplorerAddressUrl(escrow.escrow_address);
 
   return (
     <Card>
@@ -151,7 +150,7 @@ function ApiEscrowCard({
             {escrow.total_kas.toLocaleString()} KAS
           </div>
           <a
-            href={`${explorerBase}/${escrow.escrow_address}`}
+            href={explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
@@ -225,7 +224,7 @@ function MilestoneRow({
         <div className="mt-0.5 text-xs text-muted-foreground">Due {dueDate}</div>
         {releaseTx && (
           <a
-            href={`https://explorer.kaspa.org/txs/${releaseTx}`}
+            href={kaspaExplorerTxUrl(releaseTx)}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-1 inline-flex items-center gap-1 text-[10px] text-primary hover:underline"

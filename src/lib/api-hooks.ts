@@ -117,6 +117,7 @@ export function useApproveScore() {
     }) => api.approveScore(proposalId, dimension, evaluator),
     onSuccess: (_d, { proposalId }) => {
       qc.invalidateQueries({ queryKey: ["proposal", proposalId] });
+      qc.invalidateQueries({ queryKey: ["audit-trail", proposalId] });
       qc.invalidateQueries({ queryKey: ["dashboard-activity"] });
     },
   });
@@ -137,6 +138,7 @@ export function useOverrideScore() {
     }) => api.overrideScore(proposalId, data),
     onSuccess: (_d, { proposalId }) => {
       qc.invalidateQueries({ queryKey: ["proposal", proposalId] });
+      qc.invalidateQueries({ queryKey: ["audit-trail", proposalId] });
       qc.invalidateQueries({ queryKey: ["evaluation-results"] });
       qc.invalidateQueries({ queryKey: ["dashboard-activity"] });
     },

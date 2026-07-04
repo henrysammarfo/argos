@@ -11,6 +11,7 @@ from api.json_utils import dumps, loads
 from api.models import KaspaEscrow
 from api.schemas import EscrowCreate
 from services.kaspa_escrow import calculate_milestone_amounts, verify_deposit
+from services.kaspa_network import deposit_instructions, explorer_address_url
 
 router = APIRouter()
 
@@ -59,10 +60,8 @@ async def create_escrow(
         "escrow_address": escrow_address,
         "total_kas": evaluation.grant_amount_kas,
         "milestones": milestone_schedule,
-        "instructions": (
-            f"Please deposit {evaluation.grant_amount_kas} KAS to {escrow_address} "
-            "to activate the escrow."
-        ),
+        "explorer_url": explorer_address_url(escrow_address),
+        "instructions": deposit_instructions(evaluation.grant_amount_kas, escrow_address),
     }
 
 

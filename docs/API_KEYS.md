@@ -30,26 +30,34 @@ curl https://api.openai.com/v1/models \
 
 ---
 
-## 2. Admin API Key (required for mutations)
+## 2. JWT secret (required for auth)
 
-**Used for:** Approve scores, override scores, create escrows, submit milestones, run evaluations.
+**Used for:** Email/password signup, login, and protecting all API mutations via Bearer token.
 
 ### Steps
 
-1. Generate any strong random string:
+1. Generate a strong random string:
    ```bash
    openssl rand -hex 32
    ```
 2. Set in backend `.env`:
    ```bash
-   ADMIN_API_KEY=your_generated_hex_string
-   ```
-3. Set in frontend `.env`:
-   ```bash
-   VITE_ADMIN_API_KEY=your_generated_hex_string
+   JWT_SECRET=your_generated_hex_string
+   JWT_EXPIRE_HOURS=168
    ```
 
-Every POST/PUT/DELETE from the console sends header `X-Admin-Key: <value>`.
+The frontend stores the JWT from `/api/auth/login` or `/api/auth/register` in sessionStorage and sends `Authorization: Bearer <token>` on every request.
+
+Optional SMTP for email verification codes:
+
+```bash
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=noreply@yourdomain.com
+SMTP_TLS=true
+```
 
 ---
 
@@ -184,11 +192,11 @@ Create `.env` in project root:
 
 ```bash
 VITE_API_BASE_URL=http://localhost:8000/api
-VITE_USE_MOCK=false
-VITE_ADMIN_API_KEY=same_as_backend_admin_key
 ```
 
-For Lovable production, set `VITE_API_BASE_URL` to your deployed Railway URL.
+Sign up at `/signup` in the console — JWT auth is handled automatically (no admin key in frontend env).
+
+For Lovable production, set `VITE_API_BASE_URL` to your deployed API URL.
 
 ---
 
@@ -208,7 +216,7 @@ FRONTEND_URL=https://your-app.lovable.app
 | Key        | Where to get it              | Env var                                |
 | ---------- | ---------------------------- | -------------------------------------- |
 | OpenAI     | platform.openai.com/api-keys | `OPENAI_API_KEY`                       |
-| Admin      | `openssl rand -hex 32`       | `ADMIN_API_KEY` + `VITE_ADMIN_API_KEY` |
+| JWT        | `openssl rand -hex 32`       | `JWT_SECRET`                           |
 | ASI:One    | asi1.ai                      | `ASI_ONE_API_KEY`                      |
 | Agentverse | agentverse.ai (account)      | `AGENTVERSE_API_KEY` (optional)        |
 | Kaspa seed | Kaspium wallet               | `KASPA_SEED_PHRASE`                    |

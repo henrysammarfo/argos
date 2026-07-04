@@ -1,13 +1,16 @@
-"""Run ARGOS full pipeline demo against local API."""
+"""Run ARGOS full pipeline demo against local API (JWT auth)."""
 
 import asyncio
 import json
 import os
+import uuid
 
 import httpx
 
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
-ADMIN_KEY = os.getenv("ADMIN_API_KEY", "")
+DEMO_EMAIL = os.getenv("DEMO_EMAIL", f"demo-{uuid.uuid4().hex[:8]}@argos.dev")
+DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "DemoPass123!")
+DEMO_ORG = os.getenv("DEMO_ORG", "ARGOS Demo Foundation")
 
 DEMO_PROPOSALS = [
     {
@@ -56,12 +59,36 @@ DEMO_PROPOSALS = [
 ]
 
 
-async def run_full_demo():
-    headers = {"X-Admin-Key": ADMIN_KEY} if ADMIN_KEY else {}
+async def _auth_headers(client: httpx.AsyncClient) -> dict[str, str]:
+    reg = await client.post(
+        "/auth/register",
+        json={
+            "email": DEMO_EMAIL,
+            "password": DEMO_PASSWORD,
+            "organization_name": DEMO_ORG,
+            "full_name": "Demo User",
+        },
+    )
+    if reg.status_code == 409:
+        login = await client.post(
+            "/auth/login",
+            json={"email": DEMO_EMAIL, "password": DEMO_PASSWORD},
+        )
+        login.raise_for_status()
+        token = login.json()["access_token"]
+    else:
+        reg.raise_for_status()
+        token = reg.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
+
+async def run_full_demo():
     async with httpx.AsyncClient(
-        base_url=BASE_URL, timeout=120, headers=headers, follow_redirects=True
+        base_url=BASE_URL, timeout=120, follow_redirects=True
     ) as client:
+        headers = await _auth_headers(client)
+        client.headers.update(headers)
+
         print("Creating evaluation round...")
         r = await client.post(
             "/evaluations",
@@ -86,9 +113,7 @@ async def run_full_demo():
             "/proposals/batch",
             json={
                 "evaluation_id": eval_id,
-                "proposals": [
-                    {**p, "evaluation_id": eval_id} for p in DEMO_PROPOSALS
-                ],
+                "proposals": [{**p, "evaluation_id": eval_id} for p in DEMO_PROPOSALS],
             },
         )
         batch_r.raise_for_status()
@@ -117,6 +142,11 @@ async def run_full_demo():
                 f"#{p['rank']} {p['title']} — {p['total_score']}/10"
                 + (f" ({flags} flags)" if flags else "")
             )
+
+        payments = await client.get("/payments/stats")
+        if payments.status_code == 200:
+            ps = payments.json()
+            print(f"\nAgent payments: {ps.get('total_agent_calls', 0)} calls, {ps.get('total_fet', 0)} FET")
 
         out_path = os.path.join(os.path.dirname(__file__), "demo_results.json")
         with open(out_path, "w") as f:

@@ -56,6 +56,20 @@ export interface DashboardStats {
     created_at: string;
     rubric: { technical: number; impact: number; team: number };
   }>;
+  gcc_public_capital?: {
+    grant_pool_kas: number;
+    escrow_managed_kas: number;
+    escrow_released_kas: number;
+    escrow_locked_kas: number;
+    proposals_evaluated: number;
+    approval_rate_pct: number;
+    evaluations_weekly: number[];
+  };
+  agent_payments?: {
+    total_fet: number;
+    total_agent_calls: number;
+    by_agent: Array<{ agent: string; calls: number; fet_total: number }>;
+  };
 }
 
 export interface ActivityEvent {
@@ -225,7 +239,7 @@ export async function overrideScore(
   });
 }
 
-export async function getAuditTrail(proposalId: string) {
+export async function getAuditTrail(proposalId: string): Promise<AuditTrail> {
   return request(`/approvals/audit/${proposalId}`);
 }
 
@@ -285,4 +299,53 @@ export async function getAgents() {
     proposals_complete: number;
     proposals_pending: number;
   }>("/agents");
+}
+
+// --- Payments (Fetch.ai track) ---
+
+export interface PaymentStats {
+  total_fet: number;
+  total_agent_calls: number;
+  by_agent: Array<{ agent: string; calls: number; fet_total: number }>;
+}
+
+export interface PaymentLedgerEntry {
+  id: string;
+  agent_name: string;
+  action: string;
+  fet_amount: number;
+  evaluation_id: string | null;
+  proposal_id: string | null;
+  tx_reference: string | null;
+  created_at: string | null;
+}
+
+export async function getPaymentStats(): Promise<PaymentStats> {
+  return request("/payments/stats");
+}
+
+export async function getPaymentLedger(limit = 50): Promise<{ payments: PaymentLedgerEntry[] }> {
+  return request(`/payments/ledger?limit=${limit}`);
+}
+
+export interface AuditTrail {
+  proposal_id: string;
+  title: string | null;
+  overrides: Array<{
+    dimension: string;
+    original_score: number | null;
+    new_score: number;
+    reason: string;
+    evaluator: string;
+    timestamp: string;
+  }>;
+  approvals: Array<{
+    action: string;
+    dimension: string | null;
+    original_score: number | null;
+    new_score: number | null;
+    reason: string | null;
+    evaluator: string;
+    timestamp: string | null;
+  }>;
 }

@@ -9,53 +9,56 @@
 
 ## Conduct (Title Sponsor)
 
-- [ ] Pitch: enterprise slow process → 8 hours with human control
-- [ ] Demo: override one AI score with reason + audit trail
-- [ ] Show before/after: 300 expert-hours vs 12 expert-hours
+- [x] Pitch: enterprise slow process → 8 hours with human control
+- [x] Demo: override one AI score with reason + audit trail (proposal page sidebar)
+- [ ] Show before/after: 300 expert-hours vs 12 expert-hours (in pitch deck)
 
 ## Fetch.ai
 
-- [ ] 6 agents registered on Agentverse
-- [ ] Chat Protocol enabled (`publish_manifest=True`)
+- [x] 6 agents registered on Agentverse
+- [x] Chat Protocol enabled (`publish_manifest=True`)
+- [x] FET payment ledger in dashboard + `/api/payments/stats`
 - [ ] ASI:One shared chat session URL pasted in submission
 - [ ] Demo: natural language query → orchestrator responds
 
 ## Kaspa
 
-- [ ] Real balance verification via api.kaspa.org
-- [ ] Escrow address shown in UI with deposit instructions
-- [ ] Milestone release flow (testnet or mainnet TX hash)
-- [ ] No unlabeled mock transaction hashes
+- [x] Real balance verification via Kaspa REST API (tn10 testnet)
+- [x] Escrow address shown in UI with tn10 explorer links
+- [x] Milestone release flow (backend signs with `KASPA_PRIVATE_KEY`)
+- [x] No unlabeled mock transaction hashes in UI
 
 ## GCC
 
-- [ ] Emphasize rubric transparency + counterfactual impact scoring
-- [ ] Public capital allocation metrics in UI
+- [x] Rubric transparency + counterfactual impact scoring
+- [x] Public capital allocation metrics in console overview (GCC panel)
 
 ## Demo Flow (manual test script)
 
-1. Create evaluation round with rubric + milestones
-2. Upload 3+ text proposals
-3. Run evaluation → watch progress bar
-4. View ranked results with score breakdown
-5. Click proposal → see reasoning → override one score
-6. View audit trail
-7. Select winner → create Kaspa escrow
-8. Submit milestone report → AI verify → approve → release
+1. `/signup` → create account
+2. Create evaluation round with rubric + milestones
+3. Upload 3+ text proposals
+4. Run evaluation → watch progress bar
+5. View ranked results with score breakdown
+6. Click proposal → see reasoning → override one score
+7. View audit trail (sidebar)
+8. Select winner → create Kaspa escrow
+9. Submit milestone report → AI verify → approve → release (tn10 explorer TX)
 
 ## Environment Checklist
 
-- [ ] `ANTHROPIC_API_KEY` set
-- [ ] PostgreSQL running (or SQLite fallback)
-- [ ] Backend deployed and reachable
+- [ ] `OPENAI_API_KEY` set
+- [ ] `JWT_SECRET` set (production)
+- [ ] PostgreSQL running (or SQLite for local dev)
+- [ ] Backend deployed and reachable (`/api/health/ready`)
 - [ ] `VITE_API_BASE_URL` points to deployed API
 - [ ] Agents running with Agentverse mailbox
 
 ## README Sections
 
-- [ ] What ARGOS does (one paragraph)
-- [ ] Architecture diagram
-- [ ] Quick start (`docker compose up` or manual steps)
-- [ ] API docs link (`/docs`)
-- [ ] Agent addresses
+- [x] What ARGOS does (one paragraph)
+- [x] Architecture diagram
+- [x] Quick start (`docker compose up` or manual steps)
+- [x] API docs link (`/docs`)
+- [x] Agent addresses
 - [ ] License

@@ -307,10 +307,10 @@ function ApiPanel() {
       desc: "Live proposal scoring via gpt-4o",
     },
     {
-      name: "Admin API Key",
-      env: "ADMIN_API_KEY + VITE_ADMIN_API_KEY",
+      name: "JWT session",
+      env: "JWT_SECRET",
       url: null,
-      desc: "openssl rand -hex 32 — protects all mutations",
+      desc: "Email/password signup — multi-tenant org isolation",
     },
     {
       name: "ASI:One",
@@ -407,8 +407,7 @@ function ApiPanel() {
         <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-muted/40 p-4 font-mono text-xs text-foreground">
           {`VITE_API_BASE_URL=http://localhost:8000/api
 
-# Admin key is entered at /login — stored in sessionStorage.
-# Must match backend ADMIN_API_KEY.`}
+# Sign up at /signup — JWT stored in sessionStorage after login.`}
         </pre>
       </Card>
     </>

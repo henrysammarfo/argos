@@ -2,7 +2,16 @@
 
 Base URL: `http://localhost:8000/api` (dev) | `https://<deployed>/api` (prod)
 
-All mutation endpoints require header: `X-Admin-Key: <ADMIN_API_KEY>`
+All protected endpoints require header: `Authorization: Bearer <JWT>` from `/api/auth/login` or `/api/auth/register`.
+
+## Auth
+
+| Method | Path              | Body            | Response                    |
+| ------ | ----------------- | --------------- | --------------------------- |
+| POST   | `/auth/register`  | email, password, organization_name | `{ access_token, user }` |
+| POST   | `/auth/login`     | email, password | `{ access_token, user }`    |
+| POST   | `/auth/verify-email` | code         | `{ email_verified: true }`  |
+| GET    | `/auth/me`        | —               | Current user + org          |
 
 ## Health
 
@@ -90,7 +99,21 @@ PDF upload: `POST /proposals/upload` multipart with `file`, `evaluation_id`, `ti
 | Method | Path                                     | Body                        | Response                                                  |
 | ------ | ---------------------------------------- | --------------------------- | --------------------------------------------------------- |
 | POST   | `/milestones/submit`                     | `MilestoneSubmissionCreate` | `{ submission_id, ai_verdict, completion_pct, evidence }` |
-| POST   | `/milestones/{id}/approve?note=optional` | —                           | `{ approved, release_tx_hash, kas_released }`             |
+| POST   | `/milestones/{id}/approve?note=optional` | —                           | `{ approved, release_tx_hash, kas_released, explorer_tx_url }` |
+
+## Payments (Fetch.ai)
+
+| Method | Path               | Description              |
+| ------ | ------------------ | ------------------------ |
+| GET    | `/payments/stats`  | FET totals by agent      |
+| GET    | `/payments/ledger` | Recent agent payment log |
+
+## Dashboard
+
+| Method | Path                 | Description                          |
+| ------ | -------------------- | ------------------------------------ |
+| GET    | `/dashboard/stats`   | KPIs, GCC public capital, FET stats  |
+| GET    | `/dashboard/activity`| Recent approvals, releases, flags    |
 
 ## Score Object Shape
 

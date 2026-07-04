@@ -115,6 +115,23 @@ class Approval(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class AgentPayment(Base):
+    """Fetch.ai track — ledger of agent evaluation fees (FET-equivalent units)."""
+
+    __tablename__ = "agent_payments"
+    __table_args__ = (Index("ix_agent_payments_org_created", "organization_id", "created_at"),)
+
+    id = Column(String, primary_key=True, default=gen_id)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    evaluation_id = Column(String, ForeignKey("evaluations.id"), nullable=False)
+    proposal_id = Column(String, ForeignKey("proposals.id"), nullable=True)
+    agent_name = Column(String, nullable=False)
+    action = Column(String, nullable=False)  # evaluate | verify_milestone | ingest
+    fet_amount = Column(Float, default=0.01)
+    tx_reference = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class KaspaEscrow(Base):
     __tablename__ = "kaspa_escrows"
     __table_args__ = (Index("ix_escrows_evaluation_id", "evaluation_id"),)

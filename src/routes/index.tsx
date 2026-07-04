@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Multi-agent AI evaluation for grants and procurement. Fetch.ai + Claude + Kaspa. 25× faster, fully auditable.",
+          "Multi-agent AI evaluation for grants and procurement. Fetch.ai + OpenAI + Kaspa. 25× faster, fully auditable.",
       },
     ],
   }),

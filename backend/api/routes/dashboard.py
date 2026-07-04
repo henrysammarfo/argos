@@ -11,6 +11,8 @@ from api.deps import CurrentUser, get_current_user, org_evaluation_ids
 from api.json_utils import loads
 from api.models import Approval, Evaluation, KaspaEscrow, MilestoneSubmission, Proposal
 
+from services.agent_payments import payment_stats
+
 router = APIRouter()
 
 
@@ -164,6 +166,18 @@ def dashboard_stats(
         "escrow_released_kas": escrow_released,
         "evaluations_weekly": series,
         "rounds": rounds,
+        "gcc_public_capital": {
+            "grant_pool_kas": grant_pool,
+            "escrow_managed_kas": escrow_managed,
+            "escrow_released_kas": escrow_released,
+            "escrow_locked_kas": max(escrow_managed - escrow_released, 0),
+            "proposals_evaluated": complete,
+            "approval_rate_pct": round(
+                (complete - flagged) / complete * 100 if complete > 0 else 0
+            ),
+            "evaluations_weekly": series,
+        },
+        "agent_payments": payment_stats(db, user.organization_id),
     }
 
 

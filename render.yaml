@@ -1,0 +1,60 @@
+services:
+  - type: web
+    name: argos-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    healthCheckPath: /api/health/ready
+    envVars:
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: argos-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: KASPA_NODE_URL
+        value: https://api-tn10.kaspa.org
+      - key: KASPA_NETWORK
+        value: kaspatest
+      - key: ESCROW_WALLET_ADDRESS
+        sync: false
+      - key: PROGRAM_ADMIN_ADDRESS
+        sync: false
+      - key: KASPA_PRIVATE_KEY
+        sync: false
+      - key: AGENTVERSE_API_KEY
+        sync: false
+      - key: ORCHESTRATOR_ADDRESS
+        sync: false
+      - key: INTAKE_ADDRESS
+        sync: false
+      - key: TECHNICAL_ADDRESS
+        sync: false
+      - key: IMPACT_ADDRESS
+        sync: false
+      - key: TEAM_ADDRESS
+        sync: false
+      - key: MILESTONE_ADDRESS
+        sync: false
+
+  - type: web
+    name: argos-web
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
+
+databases:
+  - name: argos-db
+    plan: starter
+    databaseName: argos
+    user: argos

@@ -22,6 +22,7 @@ from services.claude_evaluator import (
 )
 from services.proposal_reader import truncate_for_evaluation
 from services.scoring import collect_red_flags, compute_weighted_score
+from services.agent_payments import record_agent_payment
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -214,6 +215,23 @@ async def _run_evaluation_pipeline(
                 proposal.status = "complete"
                 proposal.evaluated_at = datetime.utcnow()
                 db.commit()
+
+                evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
+                if evaluation:
+                    for agent in (
+                        "argos-technical",
+                        "argos-impact",
+                        "argos-team",
+                        "argos-orchestrator",
+                    ):
+                        record_agent_payment(
+                            db,
+                            organization_id=evaluation.organization_id,
+                            evaluation_id=evaluation_id,
+                            agent_name=agent,
+                            action="evaluate",
+                            proposal_id=proposal_id,
+                        )
             except Exception as e:
                 logger.exception("Evaluation failed for %s: %s", proposal_id, e)
                 proposal = db.query(Proposal).filter(Proposal.id == proposal_id).first()

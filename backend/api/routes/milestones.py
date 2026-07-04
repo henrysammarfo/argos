@@ -12,6 +12,8 @@ from api.models import KaspaEscrow, MilestoneSubmission
 from api.schemas import MilestoneSubmissionCreate
 from services.claude_evaluator import verify_milestone
 from services.kaspa_escrow import release_milestone
+from services.kaspa_network import explorer_tx_url
+from services.agent_payments import record_agent_payment
 
 router = APIRouter()
 
@@ -32,6 +34,15 @@ async def submit_milestone(
         raise HTTPException(status_code=404, detail="Escrow not found")
 
     verification = await verify_milestone(data.report_text, data.promised_deliverables)
+
+    record_agent_payment(
+        db,
+        organization_id=user.organization_id,
+        evaluation_id=escrow.evaluation_id,
+        agent_name="argos-milestone",
+        action="verify_milestone",
+        proposal_id=escrow.grantee_proposal_id,
+    )
 
     submission = MilestoneSubmission(
         escrow_id=data.escrow_id,
@@ -111,4 +122,5 @@ async def approve_milestone(
         "approved": True,
         "release_tx_hash": tx_hash,
         "kas_released": kas_amount,
+        "explorer_tx_url": explorer_tx_url(tx_hash),
     }

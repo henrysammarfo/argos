@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, Card } from "@/components/dashboard-shell";
 import { ApiError, ApiLoading } from "@/components/api-state";
 import { useProposal, useApproveScore, useOverrideScore } from "@/lib/api-hooks";
+import { useAuditTrail } from "@/hooks/useAuditTrail";
 import { mapApiProposal, type AgentScore } from "@/lib/types";
 import { useState } from "react";
-import { CheckCircle2, AlertTriangle, X, ArrowLeft, FileText, MessageSquare } from "lucide-react";
+import { CheckCircle2, AlertTriangle, X, ArrowLeft, FileText, MessageSquare, History } from "lucide-react";
 
 export const Route = createFileRoute("/app/proposals/$id")({
   head: () => ({
@@ -25,6 +26,7 @@ function ProposalPage() {
   const { data: apiProposal, isLoading, isError, refetch } = useProposal(proposalId);
   const approveScore = useApproveScore();
   const overrideScore = useOverrideScore();
+  const { data: auditTrail } = useAuditTrail(proposalId);
   const [overrideDim, setOverrideDim] = useState("");
   const [overrideVal, setOverrideVal] = useState(8);
   const [overrideReason, setOverrideReason] = useState("");
@@ -240,6 +242,40 @@ function ProposalPage() {
               <MessageSquare className="h-3.5 w-3.5" /> Team
             </div>
             <p className="mt-3 text-sm text-muted-foreground">{apiProposal.team_summary ?? "—"}</p>
+          </Card>
+
+          <Card className="p-5">
+            <div className="flex items-center gap-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+              <History className="h-3.5 w-3.5" /> Audit trail
+            </div>
+            {!auditTrail || (auditTrail.approvals.length === 0 && auditTrail.overrides.length === 0) ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No human actions yet. Approvals and overrides appear here for Conduct compliance.
+              </p>
+            ) : (
+              <ul className="mt-3 max-h-64 space-y-3 overflow-y-auto text-sm">
+                {auditTrail.approvals.map((a, i) => (
+                  <li key={`a-${i}`} className="rounded-lg border border-border bg-muted/30 p-3">
+                    <div className="font-medium capitalize text-foreground">{a.action}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {a.dimension ?? "—"} · {a.evaluator}
+                      {a.timestamp ? ` · ${new Date(a.timestamp).toLocaleString()}` : ""}
+                    </div>
+                    {a.reason && <p className="mt-1 text-xs text-foreground">{a.reason}</p>}
+                  </li>
+                ))}
+                {auditTrail.overrides.map((o, i) => (
+                  <li key={`o-${i}`} className="rounded-lg border border-[color:var(--flag)]/30 bg-[color:var(--flag)]/5 p-3">
+                    <div className="font-medium text-foreground">Override · {o.dimension}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {o.original_score ?? "—"} → {o.new_score} · {o.evaluator}
+                      {o.timestamp ? ` · ${new Date(o.timestamp).toLocaleString()}` : ""}
+                    </div>
+                    <p className="mt-1 text-xs text-foreground">{o.reason}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
         </aside>
       </div>

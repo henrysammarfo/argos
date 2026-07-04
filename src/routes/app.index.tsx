@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, Card, CardHeader } from "@/components/dashboard-shell";
 import { ApiError, ApiLoading, formatRelativeTime } from "@/components/api-state";
 import { useDashboardStats, useDashboardActivity, useAgents } from "@/lib/api-hooks";
+import { usePaymentLedger } from "@/hooks/usePaymentStats";
 import {
   FileStack,
   AlertTriangle,
@@ -11,6 +12,7 @@ import {
   Radio,
   Clock,
   Plus,
+  Bot,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/")({
@@ -27,6 +29,7 @@ function OverviewPage() {
   const { data: stats, isLoading, isError, refetch } = useDashboardStats();
   const { data: activityData } = useDashboardActivity();
   const { data: agentsData } = useAgents();
+  const { data: ledgerData } = usePaymentLedger(8);
 
   if (isLoading) return <ApiLoading label="Loading live dashboard…" />;
   if (isError || !stats) {
@@ -41,6 +44,8 @@ function OverviewPage() {
   const rounds = stats.rounds;
   const active = stats.active_rounds;
   const agents = agentsData?.agents ?? [];
+  const gcc = stats.gcc_public_capital;
+  const payments = stats.agent_payments;
 
   return (
     <>
@@ -136,6 +141,64 @@ function OverviewPage() {
             ))}
           </ul>
         </Card>
+      </div>
+
+      <div className="grid gap-4 px-4 pb-4 sm:px-6 md:grid-cols-2 md:gap-6 md:px-8 md:pb-6">
+        {gcc && (
+          <Card>
+            <CardHeader title="Public capital allocation (GCC)" />
+            <div className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3">
+              <GccStat label="Grant pool" value={`${gcc.grant_pool_kas.toLocaleString()} KAS`} />
+              <GccStat label="Escrow locked" value={`${gcc.escrow_locked_kas.toLocaleString()} KAS`} />
+              <GccStat label="Released" value={`${gcc.escrow_released_kas.toLocaleString()} KAS`} />
+              <GccStat label="Evaluated" value={gcc.proposals_evaluated.toString()} />
+              <GccStat label="Approval rate" value={`${gcc.approval_rate_pct}%`} />
+              <GccStat
+                label="Under management"
+                value={`${gcc.escrow_managed_kas.toLocaleString()} KAS`}
+              />
+            </div>
+          </Card>
+        )}
+
+        {payments && (
+          <Card>
+            <CardHeader
+              title="Agent payments (Fetch.ai)"
+              action={
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Bot className="h-3 w-3" /> FET ledger
+                </span>
+              }
+            />
+            <div className="border-b border-border px-5 py-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-semibold text-foreground">{payments.total_fet}</span>
+                <span className="text-sm text-muted-foreground">FET total · {payments.total_agent_calls} calls</span>
+              </div>
+            </div>
+            <ul className="divide-y divide-border">
+              {payments.by_agent.length === 0 ? (
+                <li className="p-5 text-sm text-muted-foreground">No agent calls recorded yet.</li>
+              ) : (
+                payments.by_agent.map((a) => (
+                  <li key={a.agent} className="flex items-center justify-between px-5 py-3 text-sm">
+                    <span className="font-medium text-foreground">{a.agent}</span>
+                    <span className="text-muted-foreground">
+                      {a.calls} × {a.fet_total.toFixed(2)} FET
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+            {(ledgerData?.payments.length ?? 0) > 0 && (
+              <div className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+                Latest: {ledgerData!.payments[0].agent_name} · {ledgerData!.payments[0].action} ·{" "}
+                {ledgerData!.payments[0].fet_amount} FET
+              </div>
+            )}
+          </Card>
+        )}
       </div>
 
       <div className="grid gap-4 px-4 pb-4 sm:px-6 md:gap-6 md:px-8 md:pb-6">
@@ -293,6 +356,15 @@ function ActivityRow({
       <div className="flex-1 text-sm text-foreground">{text}</div>
       <div className="flex-shrink-0 text-xs text-muted-foreground">{time}</div>
     </li>
+  );
+}
+
+function GccStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-foreground">{value}</div>
+    </div>
   );
 }
 
