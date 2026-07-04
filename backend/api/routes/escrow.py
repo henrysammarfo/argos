@@ -10,6 +10,7 @@ from api.deps import CurrentUser, get_current_user, get_evaluation_for_org, org_
 from api.json_utils import dumps, loads
 from api.models import KaspaEscrow
 from api.schemas import EscrowCreate
+from services.kaspa_covenant import covenant_deposit_note, covenant_summary
 from services.kaspa_escrow import calculate_milestone_amounts, verify_deposit
 from services.kaspa_network import deposit_instructions, explorer_address_url
 
@@ -62,6 +63,8 @@ async def create_escrow(
         "milestones": milestone_schedule,
         "explorer_url": explorer_address_url(escrow_address),
         "instructions": deposit_instructions(evaluation.grant_amount_kas, escrow_address),
+        "covenant": covenant_summary(len(milestone_schedule)),
+        "covenant_note": covenant_deposit_note(len(milestone_schedule)),
     }
 
 

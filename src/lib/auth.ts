@@ -50,7 +50,9 @@ export function getAuthHeader(): string {
   return token ? `Bearer ${token}` : "";
 }
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
+import { getApiBaseUrl } from "./api-config";
+
+const BASE_URL = getApiBaseUrl();
 
 interface AuthResponse {
   access_token: string;

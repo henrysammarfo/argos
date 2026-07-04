@@ -22,7 +22,7 @@ from api.config import IS_PRODUCTION, validate_production_config
 from api.database import engine, get_db
 from api.limiter import limiter
 from api.models import Base
-from api.routes import approvals, auth_routes, dashboard, escrow, evaluations, milestones, payments, proposals
+from api.routes import approvals, auth_routes, dashboard, escrow, evaluations, milestones, payments, proposals, public
 
 logging.basicConfig(
     level=logging.INFO,
@@ -108,6 +108,7 @@ app.include_router(approvals.router, prefix="/api/approvals", tags=["approvals"]
 app.include_router(escrow.router, prefix="/api/escrow", tags=["escrow"])
 app.include_router(milestones.router, prefix="/api/milestones", tags=["milestones"])
 app.include_router(payments.router, prefix="/api/payments", tags=["payments"])
+app.include_router(public.router, prefix="/api/public", tags=["public"])
 
 
 @app.get("/api/health")

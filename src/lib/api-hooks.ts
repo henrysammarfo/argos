@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
+import { getApiBaseUrl } from "./api-config";
 
 /** Default polling when data is idle — keeps API load low at scale. */
 const IDLE_REFETCH_MS = 30_000;
@@ -145,6 +146,24 @@ export function useOverrideScore() {
   });
 }
 
+export function usePublicStats() {
+  return useQuery({
+    queryKey: ["public-stats"],
+    queryFn: api.getPublicStats,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
+  });
+}
+
+export function usePublicEscrowPreview() {
+  return useQuery({
+    queryKey: ["public-escrow-preview"],
+    queryFn: api.getPublicEscrowPreview,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
+  });
+}
+
 export function useAgents() {
   return useQuery({
     queryKey: ["agents"],
@@ -213,7 +232,7 @@ export function useHealthDb() {
     queryKey: ["health-db"],
     queryFn: async () => {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api"}/health/db`,
+        `${getApiBaseUrl()}/health/db`,
       );
       if (!res.ok) throw new Error("Database unreachable");
       return res.json();
@@ -228,7 +247,7 @@ export function useHealthKaspa() {
     queryKey: ["health-kaspa"],
     queryFn: async () => {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api"}/health/kaspa`,
+        `${getApiBaseUrl()}/health/kaspa`,
       );
       if (!res.ok) throw new Error("Kaspa node unreachable");
       return res.json();

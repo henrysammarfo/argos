@@ -4,7 +4,9 @@
 
 import { clearAuthSession, getAuthHeader } from "./auth";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
+import { getApiBaseUrl } from "./api-config";
+
+const BASE_URL = getApiBaseUrl();
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
@@ -326,6 +328,39 @@ export async function getPaymentStats(): Promise<PaymentStats> {
 
 export async function getPaymentLedger(limit = 50): Promise<{ payments: PaymentLedgerEntry[] }> {
   return request(`/payments/ledger?limit=${limit}`);
+}
+
+// --- Public (marketing pages, no auth) ---
+
+export interface PublicStats {
+  active_rounds: number;
+  total_proposals: number;
+  complete_proposals: number;
+  flagged_proposals: number;
+  escrow_managed_kas: number;
+  agents_online: number;
+}
+
+export async function getPublicStats(): Promise<PublicStats> {
+  return request("/public/stats");
+}
+
+export interface PublicEscrowPreview {
+  escrow: {
+    id: string;
+    total_kas: number;
+    status: string;
+    milestones: Array<{ name: string; percent: number; status: string }>;
+  } | null;
+  covenant: Record<string, unknown>;
+}
+
+export async function getPublicEscrowPreview(): Promise<PublicEscrowPreview> {
+  return request("/public/escrow-preview");
+}
+
+export async function getPublicCovenant(): Promise<Record<string, unknown>> {
+  return request("/public/covenant");
 }
 
 export interface AuditTrail {

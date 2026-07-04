@@ -46,7 +46,7 @@ function AgentsPage() {
         {isLoading && <ApiLoading label="Loading live agent status…" />}
         {isError && (
           <ApiError
-            message="Start the backend to see live agent addresses."
+            message="Could not load agent status from API. Redeploy Vercel with VITE_API_BASE_URL=/api (proxied)."
             onRetry={() => void refetch()}
           />
         )}

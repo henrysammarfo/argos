@@ -1,16 +1,32 @@
-import { useEscrows } from "@/lib/api-hooks";
+import { usePublicEscrowPreview } from "@/lib/api-hooks";
 import { ApiLoading } from "@/components/api-state";
+import { Shield } from "lucide-react";
 
 export function LiveMilestonePreview() {
-  const { data, isLoading } = useEscrows();
+  const { data, isLoading, isError } = usePublicEscrowPreview();
 
   if (isLoading) return <ApiLoading label="Loading live escrow…" />;
 
-  const escrow = data?.escrows?.[0];
-  if (!escrow) {
+  const escrow = data?.escrow;
+  const covenant = data?.covenant;
+
+  if (isError || !escrow) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-        No active escrows. Create one from the console after an evaluation round.
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Shield className="h-4 w-4 text-primary" />
+          SilverScript milestone covenant
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          ARGOS locks grant funds in a Kaspa{" "}
+          <span className="text-foreground">MilestoneEscrow</span> covenant — releases require
+          arbiter + grantee signatures after AI milestone verification.
+        </p>
+        {covenant && (
+          <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+            {(covenant as { script_sha256?: string }).script_sha256?.slice(0, 24)}… · TN12
+          </p>
+        )}
       </div>
     );
   }
@@ -24,7 +40,7 @@ export function LiveMilestonePreview() {
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>{escrow.id.slice(0, 12)}…</span>
+        <span>{escrow.id}… · covenant escrow</span>
         <span className="text-primary">{escrow.total_kas.toLocaleString()} KAS</span>
       </div>
       <div className="mt-6 space-y-4">

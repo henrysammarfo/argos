@@ -144,7 +144,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 | Name | Value |
 | ---- | ----- |
-| `VITE_API_BASE_URL` | `http://YOUR_VM_IP:8000/api` or `https://api.yourdomain.com/api` |
+| `VITE_API_BASE_URL` | `/api` on Vercel (rewrites to Azure). Local: `http://localhost:8000/api` |
 | `VITE_USE_MOCK` | `false` |
 
 5. Deploy → copy your Vercel URL (e.g. `https://argos-xxx.vercel.app`)

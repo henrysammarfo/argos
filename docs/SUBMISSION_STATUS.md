@@ -58,7 +58,8 @@ python3 agents/test_asi_one.py
 
 - [ ] **3-minute demo video** (screen recording)
 - [ ] **DoraHacks BUIDL** entry + thumbnail
-- [ ] **Live URL** — Vercel frontend + Azure VM backend ([docs/DEPLOY.md](./DEPLOY.md))
+- [x] **Live URL** — https://argos-lac.vercel.app + Azure backend
+- [x] SilverScript milestone covenant (`backend/kaspa/covenant/escrow-milestone.sil`)
 - [ ] **ASI:One shared session URL** from browser chat after agents indexed
 - [ ] Run Agentverse **agent evaluation** in dashboard (boosts ASI:One ranking)
 

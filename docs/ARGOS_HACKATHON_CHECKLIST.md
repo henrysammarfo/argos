@@ -26,7 +26,7 @@
 - [x] Real balance verification via Kaspa REST API (tn10 testnet)
 - [x] Escrow address shown in UI with tn10 explorer links
 - [x] Milestone release flow (backend signs with `KASPA_PRIVATE_KEY`)
-- [x] No unlabeled mock transaction hashes in UI
+- [x] SilverScript MilestoneEscrow covenant source + `/api/public/covenant`
 
 ## GCC
 

@@ -36,7 +36,7 @@ uvicorn api.main:app --reload --port 8000
 ```bash
 bun install
 cp .env.example .env
-# Set VITE_API_BASE_URL (sign up at /signup — JWT auth, no admin key)
+| `VITE_API_BASE_URL` | **Production:** `/api` (Vercel proxy). **Local:** `http://localhost:8000/api` |
 
 bun run dev
 # Open http://localhost:5173

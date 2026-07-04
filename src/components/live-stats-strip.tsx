@@ -1,7 +1,7 @@
-import { useDashboardStats } from "@/lib/api-hooks";
+import { usePublicStats } from "@/lib/api-hooks";
 
 export function LiveStatsStrip() {
-  const { data } = useDashboardStats();
+  const { data } = usePublicStats();
 
   if (!data) {
     return (
