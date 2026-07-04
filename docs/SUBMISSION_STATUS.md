@@ -2,6 +2,17 @@
 
 Last updated: 2026-07-04
 
+## Submission links
+
+| Artifact | URL |
+| -------- | --- |
+| **Live app** | https://argos-lac.vercel.app |
+| **Pitch deck** | https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2 |
+| **GitHub** | https://github.com/henrysammarfo/argos |
+| **DoraHacks BUIDL** | [Hackathon #2272](https://dorahacks.io/hackathon/2272) |
+| **API ready** | http://51.103.219.168:8000/api/health/ready |
+| **Covenant API** | http://51.103.219.168:8000/api/public/covenant |
+
 ## Ready for submission
 
 | Track | Status | Notes |
@@ -56,8 +67,9 @@ python3 agents/test_asi_one.py
 
 ## Still needed before final submit
 
-- [ ] **3-minute demo video** (screen recording)
-- [ ] **DoraHacks BUIDL** entry + thumbnail
+- [ ] **Demo video** (3 min, screen recording)
+- [x] **Pitch deck** — [Gamma](https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2)
+- [x] **DoraHacks BUIDL** entry (logo: `public/argos-logo-buidl.png`)
 - [x] **Live URL** — https://argos-lac.vercel.app + Azure backend
 - [x] SilverScript milestone covenant (`backend/kaspa/covenant/escrow-milestone.sil`)
 - [ ] **ASI:One shared session URL** from browser chat after agents indexed

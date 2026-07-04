@@ -2,16 +2,17 @@
 
 ## DoraHacks BUIDL — [Hackathon 2272](https://dorahacks.io/hackathon/2272)
 
-- [ ] GitHub repo link (public, README with setup)
+- [x] GitHub repo link (public, README with setup)
+- [x] Pitch deck — [Gamma](https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2)
 - [ ] Demo video (3 min, screen recording OK)
-- [ ] Screenshot for thumbnail
-- [ ] Optional live demo URL
+- [x] Logo thumbnail — `public/argos-logo-buidl.png`
+- [x] Live demo URL — https://argos-lac.vercel.app
 
 ## Conduct (Title Sponsor)
 
 - [x] Pitch: enterprise slow process → 8 hours with human control
 - [x] Demo: override one AI score with reason + audit trail (proposal page sidebar)
-- [ ] Show before/after: 300 expert-hours vs 12 expert-hours (in pitch deck)
+- [x] Before/after: 300 expert-hours vs 12 expert-hours (in [pitch deck](https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2))
 
 ## Fetch.ai
 
@@ -51,7 +52,7 @@
 - [ ] `JWT_SECRET` set (production)
 - [ ] PostgreSQL running (or SQLite for local dev)
 - [ ] Backend deployed and reachable (`/api/health/ready`)
-- [ ] `VITE_API_BASE_URL` points to deployed API
+- [ ] `VITE_API_BASE_URL=/api` on Vercel (proxied to Azure backend)
 - [ ] Agents running with Agentverse mailbox
 
 ## README Sections
@@ -61,4 +62,12 @@
 - [x] Quick start (`docker compose up` or manual steps)
 - [x] API docs link (`/docs`)
 - [x] Agent addresses
-- [ ] License
+- [x] License
+
+## Submission artifacts
+
+| Item | Link |
+| ---- | ---- |
+| Live app | https://argos-lac.vercel.app |
+| Pitch deck | https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2 |
+| GitHub | https://github.com/henrysammarfo/argos |

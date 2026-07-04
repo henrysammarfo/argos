@@ -2,6 +2,12 @@
 
 **Goal:** Vercel frontend + backend live 24/7 **without paying Render**.
 
+| Resource | URL |
+| -------- | --- |
+| Live app | https://argos-lac.vercel.app |
+| Pitch deck | https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2 |
+| GitHub | https://github.com/henrysammarfo/argos |
+
 | Layer | Free option | Cost |
 | ----- | ----------- | ---- |
 | **Frontend** | [Vercel](https://vercel.com) Hobby | $0 |

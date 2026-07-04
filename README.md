@@ -4,6 +4,15 @@ ARGOS takes grant proposals from weeks of committee review to hours — every AI
 
 **Hackathon:** UK AI Agent Hackathon EP5 × Conduct · [DoraHacks #2272](https://dorahacks.io/hackathon/2272)
 
+## Links
+
+| Resource | URL |
+| -------- | --- |
+| **Live app** | https://argos-lac.vercel.app |
+| **Pitch deck** | https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2 |
+| **GitHub** | https://github.com/henrysammarfo/argos |
+| **API health** | http://51.103.219.168:8000/api/health/ready |
+
 ## Architecture
 
 - **Frontend:** TanStack Start + React 19 + Tailwind v4 (Lovable) — all pages poll live API
@@ -36,7 +45,7 @@ uvicorn api.main:app --reload --port 8000
 ```bash
 bun install
 cp .env.example .env
-| `VITE_API_BASE_URL` | **Production:** `/api` (Vercel proxy). **Local:** `http://localhost:8000/api` |
+# VITE_API_BASE_URL=/api on Vercel (proxied). Local: http://localhost:8000/api
 
 bun run dev
 # Open http://localhost:5173
@@ -84,7 +93,7 @@ Quick path:
 
 1. `./scripts/deploy-azure-vm.sh` → API on `:8000` (does not touch Veil/Magmos folders)
 2. Open Azure NSG port **8000**
-3. Vercel → `VITE_API_BASE_URL=http://VM_IP:8000/api`, `VITE_USE_MOCK=false`
+3. Vercel → `VITE_API_BASE_URL=/api`, `VITE_USE_MOCK=false`
 4. Set `CORS_ORIGINS` on VM to your Vercel URL
 
 ## API Keys Required
@@ -116,6 +125,10 @@ bun run lint && bun run build
 
 ## Documentation
 
+- [Submission status](docs/SUBMISSION_STATUS.md)
+- [Pitch deck (Gamma)](https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2)
+- [Kaspa SilverScript covenant](docs/KASPA_COVENANT.md)
+- [Deploy guide](docs/DEPLOY.md)
 - [API Keys Setup](docs/API_KEYS.md)
 - [Memory / Facts](docs/ARGOS_MEMORY.md)
 - [Security](docs/ARGOS_SECURITY.md)

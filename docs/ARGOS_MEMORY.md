@@ -9,6 +9,8 @@
 | ------------------- | -------------------------------------------------------------- |
 | Event               | UK AI Agent Hackathon EP5 × Conduct                            |
 | DoraHacks ID        | [2272](https://dorahacks.io/hackathon/2272)                    |
+| Live app            | https://argos-lac.vercel.app                                   |
+| Pitch deck          | https://gamma.app/docs/ARGOS-3lwcurv75qoj6k2                   |
 | Demo Day            | 2026-07-04, Imperial College London                            |
 | Submission deadline | 2026-07-04 22:59 UTC                                           |
 | Prize pool          | ~$33,300 across 8 bounties                                     |
