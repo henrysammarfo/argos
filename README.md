@@ -70,6 +70,21 @@ python3 agents/test_asi_one.py
 
 See [docs/SUBMISSION_STATUS.md](docs/SUBMISSION_STATUS.md) for Agentverse profile URLs and hackathon checklist.
 
+## Production deploy (Vercel + Render, 24/7)
+
+| Component | Platform |
+| --------- | -------- |
+| Frontend (TanStack Start) | **Vercel** |
+| API + PostgreSQL + uAgents | **Render** (Starter plan for always-on) |
+
+Full step-by-step: **[docs/DEPLOY.md](docs/DEPLOY.md)**
+
+Quick summary:
+
+1. Apply `render.yaml` on Render → API + Postgres + agents worker
+2. Import repo on Vercel → set `VITE_API_BASE_URL=https://<your-api>.onrender.com/api`
+3. Add Vercel URL to Render `CORS_ORIGINS` and `FRONTEND_URL`
+
 ## API Keys Required
 
 | Key | Required | Purpose |

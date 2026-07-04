@@ -58,9 +58,19 @@ python3 agents/test_asi_one.py
 
 - [ ] **3-minute demo video** (screen recording)
 - [ ] **DoraHacks BUIDL** entry + thumbnail
-- [ ] **Live URL** (Lovable deploy + backend on docker compose / Railway)
+- [ ] **Live URL** — Vercel frontend + Render backend ([docs/DEPLOY.md](./DEPLOY.md))
 - [ ] **ASI:One shared session URL** from browser chat after agents indexed
 - [ ] Run Agentverse **agent evaluation** in dashboard (boosts ASI:One ranking)
+
+## Recommended live hosting
+
+| Service | Platform | URL pattern |
+|---------|----------|-------------|
+| Frontend | Vercel | `https://argos-*.vercel.app` |
+| API + DB | Render Starter | `https://argos-api.onrender.com` |
+| uAgents 24/7 | Render Worker Starter | (no public URL — mailbox only) |
+
+See **[docs/DEPLOY.md](./DEPLOY.md)** for full setup.
 
 ## Kaspa wallet model (important)
 
