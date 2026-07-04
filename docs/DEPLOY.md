@@ -153,8 +153,8 @@ docker compose -f docker-compose.prod.yml up -d
 
 **Build settings** (usually auto):
 
-- Install: `npm ci`
-- Build: `npm run build`
+- Install: `bun install --frozen-lockfile`
+- Build: `bun run build`
 - Output: handled by Nitro Vercel preset (`vite.config.ts`)
 
 ---
