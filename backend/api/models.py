@@ -11,10 +11,39 @@ def gen_id() -> str:
     return str(uuid.uuid4())
 
 
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    name = Column(String, nullable=False)
+    slug = Column(String, unique=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    users = relationship("User", back_populates="organization")
+    evaluations = relationship("Evaluation", back_populates="organization")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    full_name = Column(String, nullable=True)
+    role = Column(String, default="admin")  # admin | reviewer
+    email_verified = Column(Boolean, default=False)
+    verification_code = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    organization = relationship("Organization", back_populates="users")
+
+
 class Evaluation(Base):
     __tablename__ = "evaluations"
 
     id = Column(String, primary_key=True, default=gen_id)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     rubric = Column(Text, nullable=False)  # JSON string
@@ -23,6 +52,7 @@ class Evaluation(Base):
     status = Column(String, default="active")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    organization = relationship("Organization", back_populates="evaluations")
     proposals = relationship("Proposal", back_populates="evaluation")
 
 

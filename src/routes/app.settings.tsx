@@ -1,21 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, Card } from "@/components/dashboard-shell";
 import { useState } from "react";
-import { Save, ExternalLink, CheckCircle2, XCircle } from "lucide-react";
+import { Save, ExternalLink, CheckCircle2, XCircle, Mail, Loader2 } from "lucide-react";
 import { useHealthCheck, useHealthDb, useHealthKaspa } from "@/lib/api-hooks";
+import { useAuth } from "@/lib/auth-context";
+import { z } from "zod";
+
+const settingsSearchSchema = z.object({
+  tab: z.string().optional(),
+});
 
 export const Route = createFileRoute("/app/settings")({
+  validateSearch: settingsSearchSchema,
   head: () => ({
     meta: [{ title: "Settings — ARGOS Console" }],
   }),
   component: SettingsPage,
 });
 
-const TABS = ["Rubric", "Organization", "API keys", "Notifications"] as const;
+const TABS = ["Account", "Rubric", "Organization", "API keys", "Notifications"] as const;
 type Tab = (typeof TABS)[number];
 
 function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("API keys");
+  const { tab: tabParam } = Route.useSearch();
+  const [tab, setTab] = useState<Tab>((tabParam as Tab) || "Account");
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -73,12 +81,141 @@ function SettingsPage() {
       </div>
 
       <div className="grid gap-4 p-4 sm:p-6 md:grid-cols-2 md:p-8">
+        {tab === "Account" && <AccountPanel />}
         {tab === "Rubric" && <RubricPanel />}
         {tab === "Organization" && <OrgPanel />}
         {tab === "API keys" && <ApiPanel />}
         {tab === "Notifications" && <NotifPanel />}
       </div>
     </>
+  );
+}
+
+function AccountPanel() {
+  const { user, email, emailVerified, organizationName, verifyEmailCode, resendVerificationCode, refreshUser } =
+    useAuth();
+  const [code, setCode] = useState("");
+  const [demoCode, setDemoCode] = useState("");
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleVerify = async () => {
+    setLoading(true);
+    setMsg("");
+    try {
+      await verifyEmailCode(code.trim());
+      await refreshUser();
+      setMsg("Email verified successfully.");
+      setCode("");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Verification failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setLoading(true);
+    setMsg("");
+    try {
+      const newCode = await resendVerificationCode();
+      if (newCode) setDemoCode(newCode);
+      setMsg("New verification code generated.");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Could not resend");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="p-5 md:col-span-2">
+      <div className="text-sm font-semibold text-foreground">Account & email</div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Your login email and verification status for this isolated workspace.
+      </p>
+
+      <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div>
+          <dt className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            Email
+          </dt>
+          <dd className="mt-1 flex items-center gap-2 text-sm font-medium text-foreground">
+            <Mail className="h-4 w-4 text-primary" />
+            {email || user?.email}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            Organization (tenant)
+          </dt>
+          <dd className="mt-1 text-sm text-foreground">{organizationName}</dd>
+        </div>
+        <div>
+          <dt className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            Email verified
+          </dt>
+          <dd className="mt-1">
+            {emailVerified ? (
+              <span className="inline-flex items-center gap-1 text-sm text-[color:var(--approve)]">
+                <CheckCircle2 className="h-4 w-4" /> Verified
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-sm text-[color:var(--flag)]">
+                <XCircle className="h-4 w-4" /> Pending verification
+              </span>
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            Role
+          </dt>
+          <dd className="mt-1 text-sm capitalize text-foreground">{user?.role ?? "admin"}</dd>
+        </div>
+      </dl>
+
+      {!emailVerified && (
+        <div className="mt-8 rounded-xl border border-border bg-muted/30 p-5">
+          <div className="text-sm font-semibold text-foreground">Verify your email</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Enter the 6-digit code from signup (demo mode — no SMTP). This confirms the address
+            above is yours.
+          </p>
+          {demoCode && (
+            <p className="mt-2 font-mono text-sm text-primary">
+              Demo code: <strong>{demoCode}</strong>
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="000000"
+              maxLength={6}
+              className="w-32 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm tracking-widest"
+            />
+            <button
+              onClick={() => void handleVerify()}
+              disabled={loading || code.length < 6}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Verify email
+            </button>
+            <button
+              onClick={() => void handleResend()}
+              disabled={loading}
+              className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              Resend code
+            </button>
+          </div>
+        </div>
+      )}
+
+      {msg && <p className="mt-4 text-sm text-primary">{msg}</p>}
+    </Card>
   );
 }
 
@@ -120,6 +257,7 @@ function RubricPanel() {
 }
 
 function OrgPanel() {
+  const { organizationName } = useAuth();
   const stored =
     typeof window !== "undefined" ? JSON.parse(localStorage.getItem("argos-settings") ?? "{}") : {};
   const org = stored.org ?? {};
@@ -131,7 +269,7 @@ function OrgPanel() {
         <Field
           id="org-name"
           label="Program name"
-          defaultValue={org.name ?? "Horizon Europe Cluster 5"}
+          defaultValue={organizationName || org.name || "Your program"}
         />
         <Field
           id="org-escrow"
@@ -141,8 +279,8 @@ function OrgPanel() {
         />
         <Field
           id="org-admin"
-          label="Program admin"
-          defaultValue={org.admin ?? "admin@horizon.eu"}
+          label="Program admin email"
+          defaultValue={org.admin ?? ""}
         />
         <Field label="Timezone" defaultValue="Europe/London" />
       </div>

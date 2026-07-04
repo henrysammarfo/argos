@@ -2,7 +2,7 @@
  * ARGOS typed API client — all requests hit the live FastAPI backend.
  */
 
-import { clearAuthSession, getAdminKeyForRequest } from "./auth";
+import { clearAuthSession, getAuthHeader } from "./auth";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
 
@@ -11,8 +11,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
-  const adminKey = getAdminKeyForRequest();
-  if (adminKey) headers["X-Admin-Key"] = adminKey;
+  const auth = getAuthHeader();
+  if (auth) headers["Authorization"] = auth;
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (res.status === 401 && typeof window !== "undefined") {

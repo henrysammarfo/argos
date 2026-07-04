@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ProductRouteImport } from './routes/product'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MerchRouteImport } from './routes/merch'
@@ -27,6 +28,11 @@ import { Route as AppEvaluationsIndexRouteImport } from './routes/app.evaluation
 import { Route as AppProposalsIdRouteImport } from './routes/app.proposals.$id'
 import { Route as AppEvaluationsIdRouteImport } from './routes/app.evaluations.$id'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductRoute = ProductRouteImport.update({
   id: '/product',
   path: '/product',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/merch': typeof MerchRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
+  '/signup': typeof SignupRoute
   '/app/agents': typeof AppAgentsRoute
   '/app/escrow': typeof AppEscrowRoute
   '/app/settings': typeof AppSettingsRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/merch': typeof MerchRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
+  '/signup': typeof SignupRoute
   '/app/agents': typeof AppAgentsRoute
   '/app/escrow': typeof AppEscrowRoute
   '/app/settings': typeof AppSettingsRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/merch': typeof MerchRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
+  '/signup': typeof SignupRoute
   '/app/agents': typeof AppAgentsRoute
   '/app/escrow': typeof AppEscrowRoute
   '/app/settings': typeof AppSettingsRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/merch'
     | '/pricing'
     | '/product'
+    | '/signup'
     | '/app/agents'
     | '/app/escrow'
     | '/app/settings'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/merch'
     | '/pricing'
     | '/product'
+    | '/signup'
     | '/app/agents'
     | '/app/escrow'
     | '/app/settings'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/merch'
     | '/pricing'
     | '/product'
+    | '/signup'
     | '/app/agents'
     | '/app/escrow'
     | '/app/settings'
@@ -239,10 +251,18 @@ export interface RootRouteChildren {
   MerchRoute: typeof MerchRoute
   PricingRoute: typeof PricingRoute
   ProductRoute: typeof ProductRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/product': {
       id: '/product'
       path: '/product'
@@ -399,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchRoute: MerchRoute,
   PricingRoute: PricingRoute,
   ProductRoute: ProductRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

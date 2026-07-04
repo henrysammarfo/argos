@@ -9,27 +9,44 @@ import {
 } from "react";
 import {
   clearAuthSession,
-  getStoredAdminKey,
-  getStoredEmail,
+  fetchMe,
+  getStoredToken,
+  getStoredUser,
   isAuthenticated as checkAuth,
-  loginWithAdminKey,
+  loginWithPassword,
   logout as authLogout,
+  registerAccount,
+  resendVerification,
   validateSession,
+  verifyEmail,
+  type AuthUser,
 } from "./auth";
 
 interface AuthContextValue {
   isAuthenticated: boolean;
+  user: AuthUser | null;
   email: string;
+  emailVerified: boolean;
+  organizationName: string;
   isLoading: boolean;
-  login: (adminKey: string, email?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: {
+    email: string;
+    password: string;
+    organization_name: string;
+    full_name?: string;
+  }) => Promise<string | undefined>;
+  verifyEmailCode: (code: string) => Promise<void>;
+  resendVerificationCode: () => Promise<string | undefined>;
+  refreshUser: () => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [email, setEmail] = useState("");
+  const [user, setUser] = useState<AuthUser | null>(getStoredUser());
+  const [isAuthenticated, setIsAuthenticated] = useState(checkAuth());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -37,8 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const ok = await validateSession();
       if (cancelled) return;
-      setIsAuthenticated(ok || checkAuth());
-      setEmail(getStoredEmail());
+      setIsAuthenticated(ok);
+      setUser(getStoredUser());
       setIsLoading(false);
     })();
     return () => {
@@ -46,21 +63,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (adminKey: string, loginEmail?: string) => {
-    const result = await loginWithAdminKey(adminKey, loginEmail);
+  const login = useCallback(async (email: string, password: string) => {
+    const u = await loginWithPassword(email, password);
+    setUser(u);
     setIsAuthenticated(true);
-    setEmail(result.email);
+  }, []);
+
+  const register = useCallback(
+    async (data: {
+      email: string;
+      password: string;
+      organization_name: string;
+      full_name?: string;
+    }) => {
+      const result = await registerAccount(data);
+      setUser(result.user);
+      setIsAuthenticated(true);
+      return result.verification_code;
+    },
+    [],
+  );
+
+  const verifyEmailCode = useCallback(async (code: string) => {
+    const u = await verifyEmail(code);
+    setUser(u);
+  }, []);
+
+  const resendVerificationCode = useCallback(async () => {
+    const result = await resendVerification();
+    return result.verification_code;
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const u = await fetchMe();
+    setUser(u);
   }, []);
 
   const logout = useCallback(() => {
     authLogout();
+    setUser(null);
     setIsAuthenticated(false);
-    setEmail("");
   }, []);
 
   const value = useMemo(
-    () => ({ isAuthenticated, email, isLoading, login, logout }),
-    [isAuthenticated, email, isLoading, login, logout],
+    () => ({
+      isAuthenticated,
+      user,
+      email: user?.email ?? "",
+      emailVerified: user?.email_verified ?? false,
+      organizationName: user?.organization_name ?? "",
+      isLoading,
+      login,
+      register,
+      verifyEmailCode,
+      resendVerificationCode,
+      refreshUser,
+      logout,
+    }),
+    [
+      isAuthenticated,
+      user,
+      isLoading,
+      login,
+      register,
+      verifyEmailCode,
+      resendVerificationCode,
+      refreshUser,
+      logout,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -72,13 +142,8 @@ export function useAuth() {
   return ctx;
 }
 
-export function useAuthOptional() {
-  return useContext(AuthContext);
-}
-
-/** For route guards — sync check when session already hydrated */
 export function hasAuthSession(): boolean {
-  return checkAuth() || Boolean(getStoredAdminKey());
+  return checkAuth() || Boolean(getStoredToken());
 }
 
-export { clearAuthSession, getStoredEmail };
+export { clearAuthSession, getStoredUser };

@@ -5,8 +5,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from api.auth import require_admin
 from api.database import get_db
+from api.deps import CurrentUser, get_current_user, get_proposal_for_org
 from api.json_utils import dumps, loads
 from api.models import Approval, Proposal
 from api.schemas import OverrideRequest
@@ -15,16 +15,15 @@ from services.scoring import compute_weighted_score
 router = APIRouter()
 
 
-@router.post("/approve/{proposal_id}", dependencies=[Depends(require_admin)])
+@router.post("/approve/{proposal_id}")
 def approve_proposal_score(
     proposal_id: str,
     dimension: str,
     evaluator: str = "reviewer",
+    user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    proposal = db.query(Proposal).filter(Proposal.id == proposal_id).first()
-    if not proposal:
-        raise HTTPException(status_code=404, detail="Proposal not found")
+    get_proposal_for_org(db, proposal_id, user.organization_id)
 
     approval = Approval(
         proposal_id=proposal_id,
@@ -38,15 +37,14 @@ def approve_proposal_score(
     return {"status": "approved", "dimension": dimension}
 
 
-@router.post("/override/{proposal_id}", dependencies=[Depends(require_admin)])
+@router.post("/override/{proposal_id}")
 def override_score(
     proposal_id: str,
     request: OverrideRequest,
+    user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    proposal = db.query(Proposal).filter(Proposal.id == proposal_id).first()
-    if not proposal:
-        raise HTTPException(status_code=404, detail="Proposal not found")
+    proposal = get_proposal_for_org(db, proposal_id, user.organization_id)
 
     parts = request.dimension.split(".")
     original_score = None
@@ -108,9 +106,13 @@ def override_score(
 
 
 @router.get("/audit/{proposal_id}")
-def get_audit_trail(proposal_id: str, db: Session = Depends(get_db)):
+def get_audit_trail(
+    proposal_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    proposal = get_proposal_for_org(db, proposal_id, user.organization_id)
     approvals = db.query(Approval).filter(Approval.proposal_id == proposal_id).all()
-    proposal = db.query(Proposal).filter(Proposal.id == proposal_id).first()
 
     return {
         "proposal_id": proposal_id,

@@ -107,10 +107,10 @@ export function SiteNav({ transparent = true }: { transparent?: boolean }) {
             Log in
           </Link>
           <Link
-            to="/login"
+            to="/signup"
             className="liquid-glass rounded-full px-5 py-2 text-sm font-medium text-foreground"
           >
-            Open console
+            Create account
           </Link>
         </div>
 
@@ -185,11 +185,11 @@ export function SiteNav({ transparent = true }: { transparent?: boolean }) {
               Log in
             </Link>
             <Link
-              to="/login"
+              to="/signup"
               className="liquid-glass rounded-full px-5 py-2 text-center text-sm font-medium text-foreground"
               onClick={() => setMobile(false)}
             >
-              Open console
+              Create account
             </Link>
           </div>
         </div>

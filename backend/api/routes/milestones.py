@@ -5,8 +5,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from api.auth import require_admin
 from api.database import get_db
+from api.deps import CurrentUser, get_current_user, org_evaluation_ids
 from api.json_utils import dumps, loads
 from api.models import KaspaEscrow, MilestoneSubmission
 from api.schemas import MilestoneSubmissionCreate
@@ -16,9 +16,18 @@ from services.kaspa_escrow import release_milestone
 router = APIRouter()
 
 
-@router.post("/submit", dependencies=[Depends(require_admin)])
-async def submit_milestone(data: MilestoneSubmissionCreate, db: Session = Depends(get_db)):
-    escrow = db.query(KaspaEscrow).filter(KaspaEscrow.id == data.escrow_id).first()
+@router.post("/submit")
+async def submit_milestone(
+    data: MilestoneSubmissionCreate,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    eval_ids = org_evaluation_ids(db, user.organization_id)
+    escrow = (
+        db.query(KaspaEscrow)
+        .filter(KaspaEscrow.id == data.escrow_id, KaspaEscrow.evaluation_id.in_(eval_ids))
+        .first()
+    )
     if not escrow:
         raise HTTPException(status_code=404, detail="Escrow not found")
 
@@ -45,19 +54,28 @@ async def submit_milestone(data: MilestoneSubmissionCreate, db: Session = Depend
     }
 
 
-@router.post("/{submission_id}/approve", dependencies=[Depends(require_admin)])
+@router.post("/{submission_id}/approve")
 async def approve_milestone(
     submission_id: str,
     note: str = "",
+    user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    eval_ids = org_evaluation_ids(db, user.organization_id)
     submission = (
         db.query(MilestoneSubmission).filter(MilestoneSubmission.id == submission_id).first()
     )
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
 
-    escrow = db.query(KaspaEscrow).filter(KaspaEscrow.id == submission.escrow_id).first()
+    escrow = (
+        db.query(KaspaEscrow)
+        .filter(
+            KaspaEscrow.id == submission.escrow_id,
+            KaspaEscrow.evaluation_id.in_(eval_ids),
+        )
+        .first()
+    )
     if not escrow:
         raise HTTPException(status_code=404, detail="Escrow not found")
 

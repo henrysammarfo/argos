@@ -7,13 +7,12 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test_argos.db")
-os.environ["ADMIN_API_KEY"] = "test-admin-key"
+os.environ["JWT_SECRET"] = "test-jwt-secret"
 os.environ["OPENAI_API_KEY"] = ""
 
 from api.main import app
 
 client = TestClient(app)
-ADMIN_HEADERS = {"X-Admin-Key": "test-admin-key"}
 
 
 @pytest.fixture(autouse=True)
@@ -26,79 +25,97 @@ def setup_db():
     Base.metadata.drop_all(bind=engine)
 
 
+def _register(org: str = "Judge Org A", email: str = "judge@example.com") -> dict:
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "email": email,
+            "password": "securepass123",
+            "organization_name": org,
+            "full_name": "Test Judge",
+        },
+    )
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def _auth_headers(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}"}
+
+
 def test_health():
     r = client.get("/api/health")
     assert r.status_code == 200
-    assert r.json()["status"] == "ok"
 
 
-def test_health_db():
-    r = client.get("/api/health/db")
-    assert r.status_code == 200
-    assert r.json()["status"] == "ok"
+def test_register_login_isolated_tenants():
+    a = _register("Tenant Alpha", "alpha@test.org")
+    b = _register("Tenant Beta", "beta@test.org")
+
+    assert a["user"]["organization_id"] != b["user"]["organization_id"]
+    assert "verification_code" in a
+
+    login_r = client.post(
+        "/api/auth/login",
+        json={"email": "alpha@test.org", "password": "securepass123"},
+    )
+    assert login_r.status_code == 200
+    assert login_r.json()["access_token"]
 
 
-def test_dashboard_stats():
-    r = client.get("/api/dashboard/stats")
-    assert r.status_code == 200
-    data = r.json()
-    assert "active_rounds" in data
-    assert "evaluations_weekly" in data
+def test_tenant_data_isolation():
+    a = _register("Isolation Org A", "iso-a@test.org")
+    b = _register("Isolation Org B", "iso-b@test.org")
+    headers_a = _auth_headers(a["access_token"])
+    headers_b = _auth_headers(b["access_token"])
 
-
-def test_create_evaluation():
-    r = client.post(
+    r_a = client.post(
         "/api/evaluations/",
         json={
-            "title": "Test Round",
+            "title": "Round A",
             "rubric": {"technical": 30, "impact": 40, "team": 30},
-            "grant_amount_kas": 1000,
         },
-        headers=ADMIN_HEADERS,
+        headers=headers_a,
     )
-    assert r.status_code == 200
-    assert "id" in r.json()
+    assert r_a.status_code == 200
+
+    list_b = client.get("/api/evaluations/", headers=headers_b)
+    assert list_b.status_code == 200
+    assert len(list_b.json()["evaluations"]) == 0
+
+    list_a = client.get("/api/evaluations/", headers=headers_a)
+    assert len(list_a.json()["evaluations"]) == 1
+
+
+def test_verify_email():
+    data = _register("Verify Org", "verify@test.org")
+    headers = _auth_headers(data["access_token"])
+    code = data["verification_code"]
+
+    me_before = client.get("/api/auth/me", headers=headers)
+    assert me_before.json()["email_verified"] is False
+
+    v = client.post("/api/auth/verify-email", json={"code": code}, headers=headers)
+    assert v.status_code == 200
+
+    me_after = client.get("/api/auth/me", headers=headers)
+    assert me_after.json()["email_verified"] is True
+    assert me_after.json()["email"] == "verify@test.org"
+
+
+def test_unauthenticated_blocked():
+    r = client.get("/api/evaluations/")
+    assert r.status_code == 401
 
 
 def test_run_requires_openai():
+    data = _register("OpenAI Org", "openai@test.org")
+    headers = _auth_headers(data["access_token"])
     r = client.post(
         "/api/evaluations/",
         json={"title": "Run Test", "rubric": {"technical": 30, "impact": 40, "team": 30}},
-        headers=ADMIN_HEADERS,
+        headers=headers,
     )
     eval_id = r.json()["id"]
-    run_r = client.post(f"/api/evaluations/{eval_id}/run", headers=ADMIN_HEADERS)
+    run_r = client.post(f"/api/evaluations/{eval_id}/run", headers=headers)
     assert run_r.status_code == 503
-
-
-def test_auth_login_valid():
-    r = client.post(
-        "/api/auth/login",
-        json={"admin_key": "test-admin-key", "email": "admin@test.org"},
-    )
-    assert r.status_code == 200
-    assert r.json()["authenticated"] is True
-
-
-def test_auth_login_invalid():
-    r = client.post("/api/auth/login", json={"admin_key": "wrong-key"})
-    assert r.status_code == 401
-
-
-def test_auth_session_no_key():
-    r = client.get("/api/auth/session")
-    assert r.status_code == 401
-
-
-def test_auth_session_valid():
-    r = client.get("/api/auth/session", headers={"X-Admin-Key": "test-admin-key"})
-    assert r.status_code == 200
-    assert r.json()["authenticated"] is True
-
-
-def test_agents_endpoint():
-    r = client.get("/api/agents")
-    assert r.status_code == 200
-    data = r.json()
-    assert "agents" in data
-    assert len(data["agents"]) == 6

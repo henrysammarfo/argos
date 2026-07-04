@@ -6,10 +6,10 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from api.auth import require_admin
 from api.database import get_db
+from api.deps import CurrentUser, get_current_user, get_evaluation_for_org, get_proposal_for_org
 from api.json_utils import dumps
-from api.models import Evaluation, Proposal
+from api.models import Proposal
 from api.schemas import ProposalBatchCreate, ProposalCreate
 from services.claude_evaluator import extract_proposal_structure
 from services.proposal_reader import read_proposal, truncate_for_evaluation
@@ -22,6 +22,7 @@ MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 async def _ingest_proposal(
     db: Session,
+    organization_id: str,
     evaluation_id: str,
     title: str,
     source_type: str,
@@ -33,9 +34,7 @@ async def _ingest_proposal(
             detail="OPENAI_API_KEY is required for proposal ingestion",
         )
 
-    evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
-    if not evaluation:
-        raise HTTPException(status_code=404, detail="Evaluation not found")
+    get_evaluation_for_org(db, evaluation_id, organization_id)
 
     raw_text = await read_proposal(source_type, source)
     truncated = truncate_for_evaluation(raw_text)
@@ -61,30 +60,45 @@ async def _ingest_proposal(
     return proposal
 
 
-@router.post("/", dependencies=[Depends(require_admin)])
-async def create_proposal(data: ProposalCreate, db: Session = Depends(get_db)):
+@router.post("/")
+async def create_proposal(
+    data: ProposalCreate,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     proposal = await _ingest_proposal(
-        db, data.evaluation_id, data.title, data.source_type, data.source
+        db, user.organization_id, data.evaluation_id, data.title, data.source_type, data.source
     )
     return {"id": proposal.id, "status": "created"}
 
 
-@router.post("/batch", dependencies=[Depends(require_admin)])
-async def create_proposals_batch(data: ProposalBatchCreate, db: Session = Depends(get_db)):
+@router.post("/batch")
+async def create_proposals_batch(
+    data: ProposalBatchCreate,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    get_evaluation_for_org(db, data.evaluation_id, user.organization_id)
     ids = []
     for p in data.proposals:
         proposal = await _ingest_proposal(
-            db, data.evaluation_id, p.title, p.source_type, p.source
+            db,
+            user.organization_id,
+            data.evaluation_id,
+            p.title,
+            p.source_type,
+            p.source,
         )
         ids.append(proposal.id)
     return {"proposal_ids": ids}
 
 
-@router.post("/upload", dependencies=[Depends(require_admin)])
+@router.post("/upload")
 async def upload_proposal_pdf(
     evaluation_id: str = Form(...),
     title: str = Form(...),
     file: UploadFile = File(...),
+    user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if file.content_type not in ("application/pdf", "application/octet-stream"):
@@ -99,7 +113,9 @@ async def upload_proposal_pdf(
         tmp_path = tmp.name
 
     try:
-        proposal = await _ingest_proposal(db, evaluation_id, title, "pdf", tmp_path)
+        proposal = await _ingest_proposal(
+            db, user.organization_id, evaluation_id, title, "pdf", tmp_path
+        )
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 
@@ -107,7 +123,12 @@ async def upload_proposal_pdf(
 
 
 @router.get("/")
-def list_proposals(evaluation_id: str, db: Session = Depends(get_db)):
+def list_proposals(
+    evaluation_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    get_evaluation_for_org(db, evaluation_id, user.organization_id)
     proposals = (
         db.query(Proposal)
         .filter(Proposal.evaluation_id == evaluation_id)
@@ -131,10 +152,12 @@ def list_proposals(evaluation_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{proposal_id}")
-def get_proposal(proposal_id: str, db: Session = Depends(get_db)):
-    p = db.query(Proposal).filter(Proposal.id == proposal_id).first()
-    if not p:
-        raise HTTPException(status_code=404, detail="Proposal not found")
+def get_proposal(
+    proposal_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    p = get_proposal_for_org(db, proposal_id, user.organization_id)
     from api.json_utils import loads
 
     return {

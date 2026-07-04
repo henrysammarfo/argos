@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.deps import CurrentUser, get_current_user, org_evaluation_ids
 from api.json_utils import loads
 from api.models import Approval, Evaluation, KaspaEscrow, MilestoneSubmission, Proposal
 
@@ -18,10 +19,27 @@ def _flagged_count(proposal: Proposal) -> int:
 
 
 @router.get("/stats")
-def dashboard_stats(db: Session = Depends(get_db)):
-    evaluations = db.query(Evaluation).order_by(Evaluation.created_at.desc()).all()
-    proposals = db.query(Proposal).all()
-    escrows = db.query(KaspaEscrow).all()
+def dashboard_stats(
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    eval_ids = org_evaluation_ids(db, user.organization_id)
+    evaluations = (
+        db.query(Evaluation)
+        .filter(Evaluation.organization_id == user.organization_id)
+        .order_by(Evaluation.created_at.desc())
+        .all()
+    )
+    proposals = (
+        db.query(Proposal).filter(Proposal.evaluation_id.in_(eval_ids)).all()
+        if eval_ids
+        else []
+    )
+    escrows = (
+        db.query(KaspaEscrow).filter(KaspaEscrow.evaluation_id.in_(eval_ids)).all()
+        if eval_ids
+        else []
+    )
 
     active_rounds = sum(1 for e in evaluations if e.status != "complete")
     total_proposals = len(proposals)
@@ -89,12 +107,24 @@ def dashboard_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/activity")
-def dashboard_activity(db: Session = Depends(get_db), limit: int = 20):
+def dashboard_activity(
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = 20,
+):
+    eval_ids = org_evaluation_ids(db, user.organization_id)
+    if not eval_ids:
+        return {"activity": []}
+
     events: list[dict] = []
 
     for sub in (
         db.query(MilestoneSubmission)
-        .filter(MilestoneSubmission.release_tx_hash.isnot(None))
+        .join(KaspaEscrow, MilestoneSubmission.escrow_id == KaspaEscrow.id)
+        .filter(
+            KaspaEscrow.evaluation_id.in_(eval_ids),
+            MilestoneSubmission.release_tx_hash.isnot(None),
+        )
         .order_by(MilestoneSubmission.verified_at.desc())
         .limit(limit)
         .all()
@@ -109,7 +139,12 @@ def dashboard_activity(db: Session = Depends(get_db), limit: int = 20):
         )
 
     for approval in (
-        db.query(Approval).order_by(Approval.created_at.desc()).limit(limit).all()
+        db.query(Approval)
+        .join(Proposal, Approval.proposal_id == Proposal.id)
+        .filter(Proposal.evaluation_id.in_(eval_ids))
+        .order_by(Approval.created_at.desc())
+        .limit(limit)
+        .all()
     ):
         tone = "flag" if approval.action == "override" else "approve"
         events.append(
@@ -121,7 +156,13 @@ def dashboard_activity(db: Session = Depends(get_db), limit: int = 20):
             }
         )
 
-    for ev in db.query(Evaluation).order_by(Evaluation.created_at.desc()).limit(5).all():
+    for ev in (
+        db.query(Evaluation)
+        .filter(Evaluation.organization_id == user.organization_id)
+        .order_by(Evaluation.created_at.desc())
+        .limit(5)
+        .all()
+    ):
         events.append(
             {
                 "type": "evaluation_created",
@@ -133,7 +174,7 @@ def dashboard_activity(db: Session = Depends(get_db), limit: int = 20):
 
     for p in (
         db.query(Proposal)
-        .filter(Proposal.status == "complete")
+        .filter(Proposal.evaluation_id.in_(eval_ids), Proposal.status == "complete")
         .order_by(Proposal.evaluated_at.desc())
         .limit(5)
         .all()

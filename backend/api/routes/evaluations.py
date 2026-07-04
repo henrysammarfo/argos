@@ -7,7 +7,7 @@ from datetime import datetime
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from api.auth import require_admin
+from api.deps import CurrentUser, get_current_user, get_evaluation_for_org, org_evaluation_ids
 from api.database import SessionLocal, get_db
 from api.json_utils import dumps, loads
 from api.models import Evaluation, Proposal
@@ -38,8 +38,16 @@ def _eval_to_response(e: Evaluation) -> dict:
 
 
 @router.get("/")
-def list_evaluations(db: Session = Depends(get_db)):
-    evals = db.query(Evaluation).order_by(Evaluation.created_at.desc()).all()
+def list_evaluations(
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    evals = (
+        db.query(Evaluation)
+        .filter(Evaluation.organization_id == user.organization_id)
+        .order_by(Evaluation.created_at.desc())
+        .all()
+    )
     result = []
     for e in evals:
         proposals = db.query(Proposal).filter(Proposal.evaluation_id == e.id).all()
@@ -54,9 +62,14 @@ def list_evaluations(db: Session = Depends(get_db)):
     return {"evaluations": result}
 
 
-@router.post("/", dependencies=[Depends(require_admin)])
-async def create_evaluation(data: EvaluationCreate, db: Session = Depends(get_db)):
+@router.post("/")
+async def create_evaluation(
+    data: EvaluationCreate,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     evaluation = Evaluation(
+        organization_id=user.organization_id,
         title=data.title,
         description=data.description,
         rubric=dumps(data.rubric),
@@ -70,17 +83,20 @@ async def create_evaluation(data: EvaluationCreate, db: Session = Depends(get_db
 
 
 @router.get("/{evaluation_id}")
-def get_evaluation(evaluation_id: str, db: Session = Depends(get_db)):
-    evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
-    if not evaluation:
-        raise HTTPException(status_code=404, detail="Evaluation not found")
+def get_evaluation(
+    evaluation_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    evaluation = get_evaluation_for_org(db, evaluation_id, user.organization_id)
     return _eval_to_response(evaluation)
 
 
-@router.post("/{evaluation_id}/run", dependencies=[Depends(require_admin)])
+@router.post("/{evaluation_id}/run")
 async def run_evaluation(
     evaluation_id: str,
     background_tasks: BackgroundTasks,
+    user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if not os.getenv("OPENAI_API_KEY"):
@@ -89,9 +105,7 @@ async def run_evaluation(
             detail="OPENAI_API_KEY is required for live evaluation",
         )
 
-    evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
-    if not evaluation:
-        raise HTTPException(status_code=404, detail="Evaluation not found")
+    evaluation = get_evaluation_for_org(db, evaluation_id, user.organization_id)
 
     proposals = (
         db.query(Proposal)
@@ -183,7 +197,12 @@ async def _run_evaluation_pipeline(
 
 
 @router.get("/{evaluation_id}/status")
-def get_evaluation_status(evaluation_id: str, db: Session = Depends(get_db)):
+def get_evaluation_status(
+    evaluation_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    get_evaluation_for_org(db, evaluation_id, user.organization_id)
     proposals = db.query(Proposal).filter(Proposal.evaluation_id == evaluation_id).all()
     total = len(proposals)
     complete = sum(1 for p in proposals if p.status == "complete")
@@ -203,7 +222,12 @@ def get_evaluation_status(evaluation_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{evaluation_id}/results")
-def get_evaluation_results(evaluation_id: str, db: Session = Depends(get_db)):
+def get_evaluation_results(
+    evaluation_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    get_evaluation_for_org(db, evaluation_id, user.organization_id)
     proposals = (
         db.query(Proposal)
         .filter(Proposal.evaluation_id == evaluation_id, Proposal.status == "complete")

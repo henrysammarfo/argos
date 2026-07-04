@@ -37,7 +37,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useConsoleTheme();
   const { data: health } = useHealthCheck();
-  const { email, logout } = useAuth();
+  const { email, logout, organizationName } = useAuth();
   const navigate = useNavigate();
   const apiOnline = health?.status === "ok";
 
@@ -221,7 +221,7 @@ function SidebarInner({
             <Users className="h-3.5 w-3.5" /> ARGOS Console
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            Stripe {theme === "stripe-light" ? "light" : "dark"} · connected to live API
+            {organizationName || "Your workspace"} · live API
           </div>
         </div>
       </div>
