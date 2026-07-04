@@ -62,15 +62,18 @@ python3 agents/test_asi_one.py
 - [ ] **ASI:One shared session URL** from browser chat after agents indexed
 - [ ] Run Agentverse **agent evaluation** in dashboard (boosts ASI:One ranking)
 
-## Recommended live hosting
+## Recommended live hosting (free)
 
-| Service | Platform | URL pattern |
-|---------|----------|-------------|
-| Frontend | Vercel | `https://argos-*.vercel.app` |
-| API + DB | Render Starter | `https://argos-api.onrender.com` |
-| uAgents 24/7 | Render Worker Starter | (no public URL — mailbox only) |
+| Service | Platform | Cost |
+|---------|----------|------|
+| Frontend | Vercel Hobby | $0 |
+| PostgreSQL | Neon free | $0 |
+| API + uAgents 24/7 | **Oracle Cloud Free VM** + `docker-compose.prod.yml` | $0 |
+| Alt backend | Fly.io + Neon | $0–5/mo |
 
-See **[docs/DEPLOY.md](./DEPLOY.md)** for full setup.
+Paid fallback: Render Starter (~$21/mo) — `render.yaml`.
+
+See **[docs/DEPLOY.md](./DEPLOY.md)** for step-by-step.
 
 ## Kaspa wallet model (important)
 

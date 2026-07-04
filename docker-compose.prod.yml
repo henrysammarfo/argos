@@ -1,0 +1,35 @@
+# Production stack for a free VPS (Oracle Cloud Always Free, Hetzner, etc.)
+# Use Neon/Supabase for Postgres — set DATABASE_URL in .env.production
+
+services:
+  api:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.production
+    environment:
+      ENV: production
+      WEB_CONCURRENCY: "2"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/ready')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  agents:
+    build:
+      context: ./backend
+    command: python agents/run_mailbox_agents.py
+    env_file:
+      - .env.production
+    environment:
+      ENV: production
+      USE_AGENTVERSE_MAILBOX: "true"
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy

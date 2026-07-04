@@ -1,156 +1,203 @@
 # ARGOS production deployment
 
-**Recommended stack (24/7 live):**
+**Goal:** Vercel frontend + backend live 24/7 **without paying Render**.
 
-| Layer | Platform | Why |
-| ----- | -------- | --- |
-| **Frontend** | [Vercel](https://vercel.com) | TanStack Start + Nitro (SSR, auto-scaling, always reachable) |
-| **API + Postgres** | [Render](https://render.com) | Docker FastAPI, managed PostgreSQL, health checks |
-| **Fetch.ai agents** | Render **Background Worker** | Mailbox agents must run continuously |
-
-> **Important:** Render’s free tier sleeps after ~15 minutes of idle traffic. For a hackathon demo that must stay live 24/7, use the **Starter** plan ($7/mo per service) for the API and the agents worker.
+| Layer | Free option | Cost |
+| ----- | ----------- | ---- |
+| **Frontend** | [Vercel](https://vercel.com) Hobby | $0 |
+| **PostgreSQL** | [Neon](https://neon.tech) free tier | $0 |
+| **API + uAgents** | See **Option A** (Oracle VM) or **Option B** (Fly.io) below | $0 or low |
 
 ---
 
 ## Architecture
 
 ```
-Users → Vercel (argos.vercel.app)
+Users → Vercel (your-app.vercel.app)
           ↓ VITE_API_BASE_URL
-        Render Web Service (argos-api.onrender.com)
-          ↓
-        Render PostgreSQL
-          
-Render Worker (argos-agents) → Agentverse mailbox 24/7
+        API (Fly.io or VPS :8000)
+          ↓ DATABASE_URL
+        Neon Postgres (free)
+
+Agents worker (same VPS or 2nd Fly app) → Agentverse mailbox 24/7
 ```
 
 ---
 
-## Step 1 — Backend on Render
+## Option A — Fully free 24/7 (recommended)
 
-### Option A: Blueprint (fastest)
+**Vercel + Neon + Oracle Cloud Always Free VM**
 
-1. Push this repo to GitHub.
-2. Go to [Render Dashboard → Blueprints](https://dashboard.render.com/blueprints).
-3. Connect the repo and apply `render.yaml`.
-4. When prompted, set **secret** env vars (see table below).
+Oracle gives a forever-free ARM VM (24 GB RAM). You run API + agents with Docker — no sleep, no monthly bill.
 
-### Option B: Manual
+### 1. Neon Postgres (free)
 
-1. **New PostgreSQL** → name `argos-db`, copy **Internal Database URL**.
-2. **New Web Service** → Docker, root `backend/`, Dockerfile `backend/Dockerfile`.
-   - Health check path: `/api/health/ready`
-   - Plan: **Starter** (24/7)
-3. **New Background Worker** → same Docker image, start command:
-   ```bash
-   python agents/run_mailbox_agents.py
-   ```
-   - Plan: **Starter** (24/7)
+1. Sign up at [neon.tech](https://neon.tech)
+2. Create project → copy **connection string** (use `?sslmode=require`)
+3. Save as `DATABASE_URL` for later
 
-### Required API env vars (Render → argos-api → Environment)
+### 2. Oracle Cloud VM (free)
 
-| Variable | Example / notes |
-| -------- | --------------- |
-| `ENV` | `production` |
-| `DATABASE_URL` | From Render Postgres (Internal URL) |
-| `JWT_SECRET` | `openssl rand -hex 32` |
-| `OPENAI_API_KEY` | From OpenAI dashboard |
-| `CORS_ORIGINS` | `https://YOUR-APP.vercel.app` (comma-separated if multiple) |
-| `FRONTEND_URL` | `https://YOUR-APP.vercel.app` |
-| `KASPA_NODE_URL` | `https://api-tn10.kaspa.org` |
-| `KASPA_NETWORK` | `kaspatest` |
-| `ESCROW_WALLET_ADDRESS` | Your tn10 escrow address |
-| `PROGRAM_ADMIN_ADDRESS` | Admin Kaspa address |
-| `KASPA_PRIVATE_KEY` | Server-side release signing (never expose to frontend) |
-| `AGENTVERSE_API_KEY` | For agent registration |
-| `ORCHESTRATOR_ADDRESS` | After `register_agentverse.py` |
-| `INTAKE_ADDRESS` | … |
-| `TECHNICAL_ADDRESS` | … |
-| `IMPACT_ADDRESS` | … |
-| `TEAM_ADDRESS` | … |
-| `MILESTONE_ADDRESS` | … |
-
-Copy the same agent + Kaspa vars to the **argos-agents** worker.
-
-After deploy, verify:
+1. [Oracle Cloud Free Tier](https://www.oracle.com/cloud/free/) → create account
+2. Create **Ampere A1** VM (Ubuntu 22.04, 2 OCPU / 12 GB is enough)
+3. Open ingress port **8000** in the VCN security list (or use Cloudflare Tunnel below)
+4. SSH in and install Docker:
 
 ```bash
-curl https://argos-api.onrender.com/api/health/ready
-curl https://argos-api.onrender.com/api/health
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+# log out and back in
+```
+
+5. Clone repo and configure:
+
+```bash
+git clone https://github.com/henrysammarfo/argos.git
+cd argos
+cp .env.production.example .env.production
+nano .env.production   # fill DATABASE_URL, JWT_SECRET, OPENAI_API_KEY, Kaspa, agents
+```
+
+6. Start API + agents:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml logs -f
+```
+
+7. Verify:
+
+```bash
+curl http://YOUR_VM_IP:8000/api/health/ready
+```
+
+**Optional — HTTPS without opening port 8000:** [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) (free) gives you `https://api.yourdomain.com` → localhost:8000.
+
+### 3. Vercel frontend
+
+1. [vercel.com/new](https://vercel.com/new) → import repo
+2. Set:
+
+| Name | Value |
+| ---- | ----- |
+| `VITE_API_BASE_URL` | `http://YOUR_VM_IP:8000/api` or `https://api.yourdomain.com/api` |
+
+3. Deploy → copy Vercel URL
+
+4. Update `.env.production` on the VM:
+
+```
+CORS_ORIGINS=https://your-app.vercel.app
+FRONTEND_URL=https://your-app.vercel.app
+```
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ---
 
-## Step 2 — Frontend on Vercel
+## Option B — Fly.io + Neon (easier CLI, small cost possible)
 
-1. Import the GitHub repo at [vercel.com/new](https://vercel.com/new).
-2. Framework preset should auto-detect **TanStack Start** (we pin Nitro `preset: "vercel"` in `vite.config.ts`).
-3. Set environment variable:
+Fly may charge a few dollars/month depending on usage; still much cheaper than Render Starter × 3.
 
-   | Name | Value |
-   | ---- | ----- |
-   | `VITE_API_BASE_URL` | `https://argos-api.onrender.com/api` |
+### 1. Neon — same as Option A
 
-4. Deploy. Copy your production URL (e.g. `https://argos-xxx.vercel.app`).
+### 2. Fly API
 
-5. **Go back to Render** and update `CORS_ORIGINS` + `FRONTEND_URL` with the Vercel URL, then redeploy the API.
+```bash
+# Install: https://fly.io/docs/hands-on/install-flyctl/
+fly auth login
+
+# Create apps (once)
+fly apps create argos-api
+fly apps create argos-agents
+
+# Secrets for API
+fly secrets set -a argos-api \
+  ENV=production \
+  DATABASE_URL='postgresql://...neon...?sslmode=require' \
+  JWT_SECRET='...' \
+  OPENAI_API_KEY='...' \
+  CORS_ORIGINS='https://your-app.vercel.app' \
+  FRONTEND_URL='https://your-app.vercel.app' \
+  KASPA_NODE_URL='https://api-tn10.kaspa.org' \
+  KASPA_NETWORK='kaspatest' \
+  # ... plus Kaspa + agent addresses
+
+fly deploy -c backend/fly.toml
+
+# Agents worker (same secrets minus CORS if you prefer)
+fly secrets set -a argos-agents \
+  ENV=production \
+  DATABASE_URL='...' \
+  OPENAI_API_KEY='...' \
+  AGENTVERSE_API_KEY='...' \
+  ORCHESTRATOR_ADDRESS='...' \
+  # ... all agent addresses
+
+fly deploy -c backend/fly.agents.toml
+```
+
+API URL: `https://argos-api.fly.dev`
+
+### 3. Vercel
+
+Set `VITE_API_BASE_URL=https://argos-api.fly.dev/api`
 
 ---
 
-## Step 3 — Register agents (one-time)
+## Option C — Render (paid)
 
-From your machine (with `backend/.env` filled):
+Render **free tier sleeps**; **Starter is ~$7/mo per service**. Only use if you want zero DevOps.
+
+See `render.yaml` in the repo. Expect ~$21/mo for API + worker + DB on Starter plans.
+
+---
+
+## Required env vars (all options)
+
+| Variable | Notes |
+| -------- | ----- |
+| `ENV` | `production` |
+| `DATABASE_URL` | Neon connection string |
+| `JWT_SECRET` | `openssl rand -hex 32` |
+| `OPENAI_API_KEY` | Required |
+| `CORS_ORIGINS` | Exact Vercel URL, no trailing slash |
+| `FRONTEND_URL` | Same Vercel URL |
+| `KASPA_*` | Testnet keys from `backend/.env.example` |
+| `AGENTVERSE_*` + `*_ADDRESS` | After `python3 agents/register_agentverse.py` |
+
+---
+
+## Register agents (one-time)
 
 ```bash
 cd backend
 python3 agents/register_agentverse.py
-# Paste printed ORCHESTRATOR_ADDRESS etc. into Render env for API + worker
+# Paste addresses into .env.production or fly secrets
+# Restart agents: docker compose restart agents  OR  fly deploy -c backend/fly.agents.toml
 ```
 
-Restart the **argos-agents** worker after updating addresses.
+---
+
+## Smoke test
+
+1. `https://YOUR-APP.vercel.app/signup`
+2. New round → proposals → Run evaluation
+3. `/app/agents` — 6 agents online
+4. Escrow → tn10 explorer link
 
 ---
 
-## Step 4 — Smoke test live stack
+## Cost comparison
 
-1. Open `https://YOUR-APP.vercel.app/signup` → create account.
-2. Console → New round → add proposals → **Run evaluation**.
-3. Dashboard → GCC + FET panels load (proves API + auth).
-4. `/app/agents` → all 6 agents **online** (proves worker + env addresses).
-5. Escrow → create → tn10 explorer link works.
+| Stack | 24/7? | Typical cost |
+| ----- | ----- | ------------ |
+| **Vercel + Neon + Oracle VM** | Yes | **$0** |
+| **Vercel + Neon + Fly.io** | Yes | **$0–5/mo** |
+| **Vercel + Render Starter × 3** | Yes | **~$21/mo** |
 
----
+Vercel cannot run Python API or uAgent mailboxes — keep those on a VM or Fly.
 
-## Custom domain (optional)
-
-| Platform | Setting |
-| -------- | ------- |
-| Vercel | Project → Domains → add `app.yourdomain.com` |
-| Render | Web Service → Custom Domain → `api.yourdomain.com` |
-
-Update `VITE_API_BASE_URL`, `CORS_ORIGINS`, and `FRONTEND_URL` to match.
-
----
-
-## Alternatives
-
-| If you prefer… | Use for backend |
-| -------------- | --------------- |
-| **Railway** | One project: API + Postgres + worker (similar Docker setup) |
-| **Fly.io** | `docker compose` on a single VM — good if you want API + agents + DB together |
-| **Neon Postgres** | Replace Render DB; keep `DATABASE_URL` pointing to Neon |
-
-Vercel cannot run the Python API or long-lived uAgent processes — keep those on Render/Railway/Fly.
-
----
-
-## Keep-alive checklist
-
-- [ ] Render API: **Starter** plan (not Free)
-- [ ] Render agents worker: **Starter** plan
-- [ ] `VITE_API_BASE_URL` points to live API `/api` suffix
-- [ ] `CORS_ORIGINS` includes exact Vercel URL (no trailing slash)
-- [ ] `/api/health/ready` returns 200
-- [ ] Agents worker logs show 6 processes running
-
-See also [docs/SUBMISSION_STATUS.md](./SUBMISSION_STATUS.md) for hackathon demo URLs.
+See [SUBMISSION_STATUS.md](./SUBMISSION_STATUS.md) for hackathon demo checklist.

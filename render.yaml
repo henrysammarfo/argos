@@ -1,5 +1,5 @@
-# Blueprint: ARGOS production on Render (API + DB + agents).
-# Frontend deploys separately on Vercel — see docs/DEPLOY.md
+# Paid option only (~$21/mo Starter). For FREE 24/7 use docs/DEPLOY.md:
+# Vercel + Neon + Oracle Cloud VM (docker-compose.prod.yml) or Fly.io + Neon.
 
 services:
   - type: web

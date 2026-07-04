@@ -1,0 +1,25 @@
+# Fly.io — ARGOS uAgents worker (24/7 mailbox)
+# Deploy: fly deploy -c backend/fly.agents.toml
+# Set the same secrets as argos-api: fly secrets set -a argos-agents KEY=value ...
+
+app = "argos-agents"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  ENV = "production"
+  USE_AGENTVERSE_MAILBOX = "true"
+
+[processes]
+  agents = "python agents/run_mailbox_agents.py"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# Worker only — no public HTTP
+[deploy]
+  strategy = "immediate"

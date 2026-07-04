@@ -70,20 +70,24 @@ python3 agents/test_asi_one.py
 
 See [docs/SUBMISSION_STATUS.md](docs/SUBMISSION_STATUS.md) for Agentverse profile URLs and hackathon checklist.
 
-## Production deploy (Vercel + Render, 24/7)
+## Production deploy (Vercel + free backend)
 
-| Component | Platform |
-| --------- | -------- |
-| Frontend (TanStack Start) | **Vercel** |
-| API + PostgreSQL + uAgents | **Render** (Starter plan for always-on) |
+| Component | Free option |
+| --------- | ----------- |
+| Frontend | **Vercel** (Hobby, $0) |
+| PostgreSQL | **Neon** (free tier) |
+| API + uAgents 24/7 | **Oracle Cloud Free VM** + `docker-compose.prod.yml` |
 
-Full step-by-step: **[docs/DEPLOY.md](docs/DEPLOY.md)**
+**Paid alternative:** Render (~$21/mo) — see `render.yaml`.
 
-Quick summary:
+Full guide: **[docs/DEPLOY.md](docs/DEPLOY.md)**
 
-1. Apply `render.yaml` on Render → API + Postgres + agents worker
-2. Import repo on Vercel → set `VITE_API_BASE_URL=https://<your-api>.onrender.com/api`
-3. Add Vercel URL to Render `CORS_ORIGINS` and `FRONTEND_URL`
+Quick path ($0):
+
+1. Neon → copy `DATABASE_URL`
+2. Oracle Always Free VM → `docker compose -f docker-compose.prod.yml up -d`
+3. Vercel → `VITE_API_BASE_URL=http://VM_IP:8000/api`
+4. Set `CORS_ORIGINS` on VM to your Vercel URL
 
 ## API Keys Required
 
