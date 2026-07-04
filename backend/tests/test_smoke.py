@@ -38,7 +38,7 @@ def test_health_db():
 
 def test_create_evaluation():
     r = client.post(
-        "/api/evaluations",
+        "/api/evaluations/",
         json={
             "title": "Test Round",
             "rubric": {"technical": 30, "impact": 40, "team": 30},
@@ -51,7 +51,7 @@ def test_create_evaluation():
 
 def test_full_pipeline():
     r = client.post(
-        "/api/evaluations",
+        "/api/evaluations/",
         json={
             "title": "Pipeline Test",
             "rubric": {"technical": 30, "impact": 40, "team": 30},

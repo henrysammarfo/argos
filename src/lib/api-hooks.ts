@@ -123,6 +123,55 @@ export function useCreateEscrow() {
   });
 }
 
+export function useCreateProposalsBatch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.createProposalsBatch,
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["evaluation-results", vars.evaluation_id] });
+      qc.invalidateQueries({ queryKey: ["evaluation-status", vars.evaluation_id] });
+    },
+  });
+}
+
+export function useSubmitMilestone() {
+  return useMutation({ mutationFn: api.submitMilestone });
+}
+
+export function useApproveMilestone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) => api.approveMilestone(id, note),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["escrows"] }),
+  });
+}
+
+export function useHealthDb() {
+  return useQuery({
+    queryKey: ["health-db"],
+    queryFn: async () => {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api"}/health/db`,
+      );
+      return res.json();
+    },
+    retry: 1,
+  });
+}
+
+export function useHealthKaspa() {
+  return useQuery({
+    queryKey: ["health-kaspa"],
+    queryFn: async () => {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api"}/health/kaspa`,
+      );
+      return res.json();
+    },
+    retry: 1,
+  });
+}
+
 export function useHealthCheck() {
   return useQuery({
     queryKey: ["health"],

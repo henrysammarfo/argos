@@ -22,7 +22,7 @@ from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
 )
 
-from services.claude_evaluator import (
+from services.openai_evaluator import (
     evaluate_impact,
     evaluate_team,
     evaluate_technical_merit,

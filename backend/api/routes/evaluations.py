@@ -108,7 +108,7 @@ async def _run_evaluation_pipeline(
             db.commit()
 
             text = truncate_for_evaluation(proposal.raw_text or "")
-            use_mock = not os.getenv("ANTHROPIC_API_KEY")
+            use_mock = not os.getenv("OPENAI_API_KEY")
 
             if use_mock:
                 technical = _mock_technical()
@@ -173,7 +173,7 @@ async def _run_evaluation_pipeline(
 
 def _mock_technical() -> dict:
     return {
-        "innovation": {"score": 7, "reasoning": "Mock evaluation — set ANTHROPIC_API_KEY for live scoring."},
+        "innovation": {"score": 7, "reasoning": "Mock evaluation — set OPENAI_API_KEY for live scoring."},
         "feasibility": {"score": 7, "reasoning": "Mock evaluation."},
         "methodology": {"score": 7, "reasoning": "Mock evaluation."},
         "red_flags": [],

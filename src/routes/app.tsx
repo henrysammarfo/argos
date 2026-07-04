@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ConsoleThemeProvider } from "@/lib/console-theme";
 
 export const Route = createFileRoute("/app")({
   head: () => ({
@@ -15,8 +16,10 @@ export const Route = createFileRoute("/app")({
 
 function AppLayout() {
   return (
-    <DashboardShell>
-      <Outlet />
-    </DashboardShell>
+    <ConsoleThemeProvider>
+      <DashboardShell>
+        <Outlet />
+      </DashboardShell>
+    </ConsoleThemeProvider>
   );
 }

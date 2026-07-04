@@ -24,8 +24,13 @@ All colors in oklch. Defined in `src/styles.css`.
 
 ## Console Theme
 
-The dashboard uses the **same dark tokens** as marketing (`.theme-console-dark`).
-The previous Stripe light purple theme (`.theme-stripe`) is deprecated.
+Dashboard uses **Stripe light** (default) and **Stripe dark** themes:
+
+- `.theme-stripe-light` — white cards, purple `#635BFF`-style primary
+- `.theme-stripe-dark` — dark blue-gray cards, brighter purple accent
+- Toggle via sun/moon button in console topbar (persisted in localStorage)
+
+Marketing site keeps cinematic dark amber `:root` tokens.
 
 ## Typography
 

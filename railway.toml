@@ -1,7 +1,7 @@
 # Railway deployment config for ARGOS backend
 # Set these in Railway dashboard:
 # - DATABASE_URL (PostgreSQL plugin)
-# - ANTHROPIC_API_KEY
+# - OPENAI_API_KEY
 # - CORS_ORIGINS (your Lovable app URL)
 # - ADMIN_API_KEY
 # - KASPA_SIMULATION=true (until Kaspa wallet configured)

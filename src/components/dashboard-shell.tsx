@@ -13,8 +13,12 @@ import {
   X,
   ChevronDown,
   LifeBuoy,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { ArgosMark } from "./argos-logo";
+import { useConsoleTheme, themeClassName } from "@/lib/console-theme";
+import { useHealthCheck } from "@/lib/api-hooks";
 
 const NAV = [
   { to: "/app", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -28,12 +32,15 @@ const NAV = [
 export function DashboardShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme } = useConsoleTheme();
+  const { data: health } = useHealthCheck();
+  const apiOnline = health?.status === "ok";
 
   const isActive = (to: string, exact: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
   return (
-    <div className="theme-console-dark flex min-h-dvh bg-background text-foreground">
+    <div className={`${themeClassName(theme)} flex min-h-dvh bg-background text-foreground`}>
       {/* Sidebar — desktop */}
       <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <SidebarInner isActive={isActive} onNavigate={() => setMobileOpen(false)} />
@@ -80,6 +87,26 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <span
+              className={`hidden rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase sm:inline-flex ${
+                apiOnline
+                  ? "bg-[color:var(--approve)]/10 text-[color:var(--approve)]"
+                  : "bg-[color:var(--flag)]/10 text-[color:var(--flag)]"
+              }`}
+            >
+              API {apiOnline ? "online" : "offline"}
+            </span>
+            <button
+              aria-label={theme === "stripe-light" ? "Switch to dark mode" : "Switch to light mode"}
+              onClick={toggleTheme}
+              className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              {theme === "stripe-light" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+            </button>
             <button
               aria-label="Help"
               className="hidden rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex"
@@ -116,6 +143,7 @@ function SidebarInner({
   isActive: (to: string, exact: boolean) => boolean;
   onNavigate: () => void;
 }) {
+  const { theme } = useConsoleTheme();
   return (
     <>
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
@@ -167,10 +195,10 @@ function SidebarInner({
       <div className="border-t border-sidebar-border p-3">
         <div className="rounded-xl border border-sidebar-border bg-sidebar-accent p-4">
           <div className="flex items-center gap-2 text-xs font-medium text-primary">
-            <Users className="h-3.5 w-3.5" /> Demo workspace
+            <Users className="h-3.5 w-3.5" /> ARGOS Console
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            All data mocked. Connect Lovable Cloud to go live.
+            Stripe {theme === "stripe-light" ? "light" : "dark"} · connected to live API
           </div>
         </div>
       </div>

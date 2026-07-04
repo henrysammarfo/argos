@@ -35,7 +35,7 @@ async def _ingest_proposal(
     truncated = truncate_for_evaluation(raw_text)
 
     structure = {}
-    if os.getenv("ANTHROPIC_API_KEY"):
+    if os.getenv("OPENAI_API_KEY"):
         try:
             structure = await extract_proposal_structure(truncated)
         except Exception as e:

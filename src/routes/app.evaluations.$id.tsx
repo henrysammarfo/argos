@@ -11,9 +11,11 @@ import {
   useEvaluationResults,
   useEvaluationStatus,
   useRunEvaluation,
+  useCreateProposalsBatch,
+  useCreateEscrow,
 } from "@/lib/api-hooks";
 import { useState } from "react";
-import { Filter, ArrowUpDown, Download, Play, Loader2 } from "lucide-react";
+import { Filter, ArrowUpDown, Download, Play, Loader2, Plus, Coins } from "lucide-react";
 
 export const Route = createFileRoute("/app/evaluations/$id")({
   loader: ({ params }) => {
@@ -41,8 +43,14 @@ function RoundPage() {
   const { data: status, refetch: refetchStatus } = useEvaluationStatus(evaluationId, true);
   const { data: results } = useEvaluationResults(evaluationId);
   const runEval = useRunEvaluation();
+  const uploadBatch = useCreateProposalsBatch();
+  const createEscrow = useCreateEscrow();
   const [filter, setFilter] = useState<"all" | ProposalStatus>("all");
   const [running, setRunning] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadText, setUploadText] = useState("");
+  const [granteeAddress, setGranteeAddress] = useState("kaspa:qr...");
+  const [msg, setMsg] = useState("");
 
   const evaluation = apiEval
     ? {
@@ -95,11 +103,57 @@ function RoundPage() {
 
   const handleRun = async () => {
     setRunning(true);
+    setMsg("");
     try {
       await runEval.mutateAsync(evaluationId);
       void refetchStatus();
     } finally {
       setRunning(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!uploadTitle.trim() || !uploadText.trim()) {
+      setMsg("Title and proposal text required.");
+      return;
+    }
+    setMsg("");
+    try {
+      await uploadBatch.mutateAsync({
+        evaluation_id: evaluationId,
+        proposals: [
+          {
+            evaluation_id: evaluationId,
+            title: uploadTitle,
+            source_type: "text",
+            source: uploadText,
+          },
+        ],
+      });
+      setUploadTitle("");
+      setUploadText("");
+      setMsg("Proposal uploaded.");
+      void refetchStatus();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Upload failed");
+    }
+  };
+
+  const handleCreateEscrow = async () => {
+    const winner = proposals[0];
+    if (!winner) {
+      setMsg("Run evaluation first to select a winner.");
+      return;
+    }
+    try {
+      const result = await createEscrow.mutateAsync({
+        evaluation_id: evaluationId,
+        winner_proposal_id: winner.id,
+        grantee_kas_address: granteeAddress,
+      });
+      setMsg(`Escrow created: deposit ${result.total_kas} KAS to ${result.escrow_address}`);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Escrow creation failed");
     }
   };
 
@@ -130,6 +184,12 @@ function RoundPage() {
         }
       />
 
+      {msg && (
+        <div className="border-b border-border bg-primary/5 px-4 py-2 text-sm text-primary sm:px-6 md:px-8">
+          {msg}
+        </div>
+      )}
+
       {status && (
         <div className="border-b border-border bg-background px-4 py-3 sm:px-6 md:px-8">
           <div className="flex items-center gap-3">
@@ -151,6 +211,53 @@ function RoundPage() {
         <RubricPill label="Impact" value={`${evaluation.rubric.impact}%`} />
         <RubricPill label="Team" value={`${evaluation.rubric.team}%`} />
         <RubricPill label="Pool" value={`${(evaluation.grantAmountKas / 1000).toFixed(0)}K KAS`} />
+      </div>
+
+      <div className="border-b border-border bg-background px-4 py-4 sm:px-6 md:px-8">
+        <Card className="p-5">
+          <div className="text-sm font-semibold text-foreground">Upload proposal</div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <input
+              value={uploadTitle}
+              onChange={(e) => setUploadTitle(e.target.value)}
+              placeholder="Proposal title"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+            <button
+              onClick={() => void handleUpload()}
+              disabled={uploadBatch.isPending}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" /> Add proposal
+            </button>
+          </div>
+          <textarea
+            value={uploadText}
+            onChange={(e) => setUploadText(e.target.value)}
+            placeholder="Paste proposal text (team, objectives, budget, methodology)…"
+            rows={4}
+            className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+          <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-border pt-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs font-medium text-muted-foreground">
+                Grantee Kaspa address
+              </label>
+              <input
+                value={granteeAddress}
+                onChange={(e) => setGranteeAddress(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+              />
+            </div>
+            <button
+              onClick={() => void handleCreateEscrow()}
+              disabled={createEscrow.isPending}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50"
+            >
+              <Coins className="h-4 w-4" /> Create Kaspa escrow for #1
+            </button>
+          </div>
+        </Card>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-3 sm:px-6 md:px-8">

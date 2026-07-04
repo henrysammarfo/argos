@@ -33,7 +33,9 @@
 
 ```bash
 # Required
-ANTHROPIC_API_KEY=
+# OpenAI
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o
 DATABASE_URL=postgresql://argos:password@localhost:5432/argos
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 ADMIN_API_KEY=                    # Protects mutations

@@ -8,7 +8,7 @@ ARGOS takes 50 grant proposals from 6 weeks of committee review to 8 hours — e
 
 - **Frontend:** TanStack Start + React 19 + Tailwind v4 (Lovable)
 - **Backend:** FastAPI + PostgreSQL + SQLAlchemy
-- **AI:** Anthropic Claude (technical, impact, team scoring)
+- **AI:** OpenAI GPT-4o (technical, impact, team scoring)
 - **Agents:** 6 Fetch.ai uAgents on Agentverse (Chat Protocol)
 - **Blockchain:** Kaspa milestone escrow (api.kaspa.org + kaspa SDK)
 
@@ -21,7 +21,7 @@ See [docs/ARGOS_ARCHITECTURE.md](docs/ARGOS_ARCHITECTURE.md) for full diagram.
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env — set ANTHROPIC_API_KEY, DATABASE_URL, etc.
+# Edit .env — set OPENAI_API_KEY, DATABASE_URL, etc.
 
 pip install -r requirements.txt
 
@@ -73,13 +73,15 @@ Register addresses on [Agentverse](https://agentverse.ai). Set env vars `ORCHEST
 
 | Key                 | Required        | Purpose              |
 | ------------------- | --------------- | -------------------- |
-| `ANTHROPIC_API_KEY` | Yes (live eval) | Claude scoring       |
+| `OPENAI_API_KEY`    | Yes (live eval) | GPT-4o scoring       |
 | `ASI_ONE_API_KEY`   | Recommended     | ASI:One discovery    |
 | `ADMIN_API_KEY`     | Recommended     | Protect mutations    |
 | `KASPA_SEED_PHRASE` | For live Kaspa  | Milestone releases   |
 | `DATABASE_URL`      | Yes             | PostgreSQL or SQLite |
 
-Without `ANTHROPIC_API_KEY`, backend uses mock scores for demo.
+Without `OPENAI_API_KEY`, backend uses mock scores for demo.
+
+See [docs/API_KEYS.md](docs/API_KEYS.md) for step-by-step key acquisition.
 
 ## API Documentation
 
@@ -106,7 +108,7 @@ bun run build
 
 ## Documentation
 
-- [Build Guide](docs/ARGOS_BUILD_GUIDE.md) — original spec
+- [API Keys Setup](docs/API_KEYS.md) — step-by-step for every credential
 - [Memory / Facts](docs/ARGOS_MEMORY.md) — living reference + bible corrections
 - [Security](docs/ARGOS_SECURITY.md) — threat model and controls
 - [Hackathon Checklist](docs/ARGOS_HACKATHON_CHECKLIST.md) — submission checklist
