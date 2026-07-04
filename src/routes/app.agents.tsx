@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/dashboard-shell";
+import { PageHeader, Card } from "@/components/dashboard-shell";
 import { agents } from "@/lib/mock-data";
 import { ArgosMark } from "@/components/argos-logo";
-import { Radio } from "lucide-react";
+import { Radio, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/app/agents")({
   head: () => ({
@@ -12,6 +12,13 @@ export const Route = createFileRoute("/app/agents")({
 });
 
 function AgentsPage() {
+  const online = agents.filter((a) => a.status === "online").length;
+  const degraded = agents.filter((a) => a.status === "degraded").length;
+  const totalHandled = agents.reduce((a, b) => a + b.proposalsHandled, 0);
+  const avgLatency = Math.round(
+    agents.reduce((a, b) => a + b.avgLatencyMs, 0) / Math.max(agents.length, 1),
+  );
+
   return (
     <>
       <PageHeader
@@ -20,50 +27,97 @@ function AgentsPage() {
         description="Live status of every ARGOS uAgent on Agentverse."
       />
 
-      <div className="grid gap-4 p-6 md:grid-cols-2 md:p-8">
+      <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6 md:p-8 xl:grid-cols-4">
+        <MiniStat label="Online" value={online.toString()} tone="approve" />
+        <MiniStat label="Degraded" value={degraded.toString()} tone="flag" />
+        <MiniStat label="Proposals handled" value={totalHandled.toString()} />
+        <MiniStat label="Avg latency" value={`${avgLatency}ms`} />
+      </div>
+
+      <div className="grid gap-4 px-4 pb-8 sm:grid-cols-2 sm:px-6 md:px-8 xl:grid-cols-3">
         {agents.map((a) => (
-          <div key={a.id} className="rounded-2xl border border-border bg-card p-6">
+          <Card key={a.id} className="p-5">
             <div className="flex items-start justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+              <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10">
                 <ArgosMark size={22} className="text-primary" />
               </div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[10px] tracking-wider uppercase">
-                <Radio
-                  className={`h-3 w-3 ${
-                    a.status === "online"
-                      ? "text-[oklch(0.75_0.15_150)]"
-                      : a.status === "degraded"
-                        ? "text-primary"
-                        : "text-destructive"
-                  }`}
-                />
-                <span className="text-muted-foreground">{a.status}</span>
+              <StatusChip status={a.status} />
+            </div>
+
+            <div className="mt-5">
+              <div className="text-[11px] font-semibold tracking-wider text-primary uppercase">
+                {a.role}
+              </div>
+              <div className="mt-1 text-lg font-semibold text-foreground">{a.name}</div>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{a.description}</p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs">
+              <div>
+                <div className="text-muted-foreground">Handled</div>
+                <div className="mt-0.5 font-mono text-foreground">{a.proposalsHandled}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Latency</div>
+                <div className="mt-0.5 font-mono text-foreground">{a.avgLatencyMs}ms</div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-muted-foreground">Address</div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <code className="truncate rounded bg-muted px-2 py-1 font-mono text-[11px] text-foreground">
+                    {a.address}
+                  </code>
+                  <button
+                    aria-label="Copy address"
+                    className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             </div>
-
-            <div className="mt-6">
-              <div className="text-xs tracking-wider text-primary uppercase">{a.role}</div>
-              <div className="mt-1 text-lg font-medium text-foreground">{a.name}</div>
-              <p className="mt-2 text-sm text-muted-foreground">{a.description}</p>
-            </div>
-
-            <div className="mt-6 grid grid-cols-3 gap-4 border-t border-border pt-4 text-xs">
-              <Stat label="Address" value={a.address} mono />
-              <Stat label="Handled" value={a.proposalsHandled.toString()} mono />
-              <Stat label="Latency" value={`${a.avgLatencyMs}ms`} mono />
-            </div>
-          </div>
+          </Card>
         ))}
       </div>
     </>
   );
 }
 
-function Stat({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function MiniStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "approve" | "flag";
+}) {
+  const color =
+    tone === "approve"
+      ? "text-[color:var(--approve)]"
+      : tone === "flag"
+        ? "text-[color:var(--flag)]"
+        : "text-foreground";
   return (
-    <div>
-      <div className="text-muted-foreground">{label}</div>
-      <div className={`mt-1 truncate text-foreground ${mono ? "font-mono" : ""}`}>{value}</div>
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div className={`mt-2 text-2xl font-semibold tracking-tight ${color}`}>{value}</div>
     </div>
+  );
+}
+
+function StatusChip({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    online: "bg-[color:var(--approve)]/10 text-[color:var(--approve)]",
+    degraded: "bg-[color:var(--flag)]/10 text-[color:var(--flag)]",
+    offline: "bg-destructive/10 text-destructive",
+  };
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wider uppercase ${map[status] ?? ""}`}
+    >
+      <Radio className="h-3 w-3" />
+      {status}
+    </span>
   );
 }
