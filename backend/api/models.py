@@ -1,7 +1,7 @@
 from datetime import datetime
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -13,6 +13,7 @@ def gen_id() -> str:
 
 class Organization(Base):
     __tablename__ = "organizations"
+    __table_args__ = (Index("ix_organizations_slug", "slug"),)
 
     id = Column(String, primary_key=True, default=gen_id)
     name = Column(String, nullable=False)
@@ -25,6 +26,7 @@ class Organization(Base):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (Index("ix_users_organization_id", "organization_id"),)
 
     id = Column(String, primary_key=True, default=gen_id)
     organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
@@ -41,6 +43,10 @@ class User(Base):
 
 class Evaluation(Base):
     __tablename__ = "evaluations"
+    __table_args__ = (
+        Index("ix_evaluations_org_created", "organization_id", "created_at"),
+        Index("ix_evaluations_org_status", "organization_id", "status"),
+    )
 
     id = Column(String, primary_key=True, default=gen_id)
     organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
@@ -58,6 +64,11 @@ class Evaluation(Base):
 
 class Proposal(Base):
     __tablename__ = "proposals"
+    __table_args__ = (
+        Index("ix_proposals_evaluation_status", "evaluation_id", "status"),
+        Index("ix_proposals_evaluation_rank", "evaluation_id", "rank"),
+        Index("ix_proposals_evaluated_at", "evaluated_at"),
+    )
 
     id = Column(String, primary_key=True, default=gen_id)
     evaluation_id = Column(String, ForeignKey("evaluations.id"), nullable=False)
@@ -91,6 +102,7 @@ class Proposal(Base):
 
 class Approval(Base):
     __tablename__ = "approvals"
+    __table_args__ = (Index("ix_approvals_proposal_created", "proposal_id", "created_at"),)
 
     id = Column(String, primary_key=True, default=gen_id)
     proposal_id = Column(String, ForeignKey("proposals.id"), nullable=False)
@@ -105,6 +117,7 @@ class Approval(Base):
 
 class KaspaEscrow(Base):
     __tablename__ = "kaspa_escrows"
+    __table_args__ = (Index("ix_escrows_evaluation_id", "evaluation_id"),)
 
     id = Column(String, primary_key=True, default=gen_id)
     evaluation_id = Column(String, ForeignKey("evaluations.id"), nullable=False)
@@ -125,6 +138,7 @@ class KaspaEscrow(Base):
 
 class MilestoneSubmission(Base):
     __tablename__ = "milestone_submissions"
+    __table_args__ = (Index("ix_milestone_submissions_escrow_id", "escrow_id"),)
 
     id = Column(String, primary_key=True, default=gen_id)
     escrow_id = Column(String, ForeignKey("kaspa_escrows.id"), nullable=False)

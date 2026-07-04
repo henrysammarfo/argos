@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: argos
+      POSTGRES_PASSWORD: argos
+      POSTGRES_DB: argos
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U argos -d argos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      ENV: production
+      DATABASE_URL: postgresql://argos:argos@db:5432/argos
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      WEB_CONCURRENCY: "4"
+      DB_POOL_SIZE: "10"
+      DB_MAX_OVERFLOW: "20"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

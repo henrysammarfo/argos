@@ -11,6 +11,7 @@ from api.deps import CurrentUser, get_current_user, get_evaluation_for_org, get_
 from api.json_utils import dumps
 from api.models import Proposal
 from api.schemas import ProposalBatchCreate, ProposalCreate
+from api.pagination import paginate_query, pagination_meta
 from services.claude_evaluator import extract_proposal_structure
 from services.proposal_reader import read_proposal, truncate_for_evaluation
 
@@ -125,16 +126,18 @@ async def upload_proposal_pdf(
 @router.get("/")
 def list_proposals(
     evaluation_id: str,
+    limit: int = 50,
+    offset: int = 0,
     user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     get_evaluation_for_org(db, evaluation_id, user.organization_id)
-    proposals = (
+    base = (
         db.query(Proposal)
         .filter(Proposal.evaluation_id == evaluation_id)
         .order_by(Proposal.created_at.desc())
-        .all()
     )
+    proposals, total = paginate_query(base, limit, offset)
     return {
         "proposals": [
             {
@@ -147,7 +150,8 @@ def list_proposals(
                 "created_at": p.created_at.isoformat() if p.created_at else None,
             }
             for p in proposals
-        ]
+        ],
+        "pagination": pagination_meta(total, limit, offset),
     }
 
 

@@ -2,12 +2,14 @@
 
 import re
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
+from api.config import expose_verification_codes
 from api.database import get_db
 from api.deps import CurrentUser, get_current_user
+from api.limiter import limiter
 from api.models import Organization, User
 from services.auth_service import (
     create_access_token,
@@ -69,7 +71,8 @@ def _user_response(user: User, org: Organization, token: str) -> dict:
 
 
 @router.post("/register")
-def register(body: RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("20/hour")
+def register(body: RegisterRequest, request: Request, db: Session = Depends(get_db)):
     email = body.email.lower().strip()
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=409, detail="An account with this email already exists")
@@ -95,12 +98,16 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
     token = create_access_token(user_id=user.id, organization_id=org.id, email=user.email)
     resp = _user_response(user, org, token)
-    resp["verification_code"] = code  # demo: shown once at signup (no SMTP in hackathon)
+    if expose_verification_codes():
+        resp["verification_code"] = code
+    else:
+        resp["message"] = "Account created. Check your email for a verification code."
     return resp
 
 
 @router.post("/login")
-def login(body: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("30/minute")
+def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     email = body.email.lower().strip()
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(body.password, user.password_hash):
@@ -132,8 +139,10 @@ def session(user: CurrentUser = Depends(get_current_user)):
 
 
 @router.post("/verify-email")
+@limiter.limit("10/minute")
 def verify_email(
     body: VerifyEmailRequest,
+    request: Request,
     user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -152,7 +161,9 @@ def verify_email(
 
 
 @router.post("/resend-verification")
+@limiter.limit("5/hour")
 def resend_verification(
+    request: Request,
     user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -165,11 +176,13 @@ def resend_verification(
     code = generate_verification_code()
     db_user.verification_code = code
     db.commit()
-    return {
+    resp: dict = {
         "email_verified": False,
-        "verification_code": code,
-        "message": "Verification code regenerated (demo — no email SMTP configured)",
+        "message": "Verification code sent." if not expose_verification_codes() else "Verification code regenerated.",
     }
+    if expose_verification_codes():
+        resp["verification_code"] = code
+    return resp
 
 
 @router.post("/logout")

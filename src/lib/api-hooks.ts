@@ -1,14 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
 
-const LIVE_REFETCH_MS = 5000;
+/** Default polling when data is idle — keeps API load low at scale. */
+const IDLE_REFETCH_MS = 30_000;
+/** Faster polling only while an evaluation run is active. */
+const ACTIVE_REFETCH_MS = 5_000;
+const EVAL_STATUS_POLL_MS = 3_000;
+
+const queryDefaults = {
+  retry: 2,
+  refetchIntervalInBackground: false,
+  refetchOnWindowFocus: true,
+} as const;
 
 export function useDashboardStats() {
   return useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: api.getDashboardStats,
-    refetchInterval: LIVE_REFETCH_MS,
-    retry: 2,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -16,8 +26,8 @@ export function useDashboardActivity() {
   return useQuery({
     queryKey: ["dashboard-activity"],
     queryFn: api.getDashboardActivity,
-    refetchInterval: LIVE_REFETCH_MS,
-    retry: 2,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -25,8 +35,8 @@ export function useEvaluations() {
   return useQuery({
     queryKey: ["evaluations"],
     queryFn: api.listEvaluations,
-    refetchInterval: LIVE_REFETCH_MS,
-    retry: 2,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -35,7 +45,8 @@ export function useEvaluation(id: string) {
     queryKey: ["evaluation", id],
     queryFn: () => api.getEvaluation(id),
     enabled: !!id,
-    refetchInterval: LIVE_REFETCH_MS,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -44,7 +55,8 @@ export function useEvaluationStatus(id: string, poll = false) {
     queryKey: ["evaluation-status", id],
     queryFn: () => api.getEvaluationStatus(id),
     enabled: !!id,
-    refetchInterval: poll ? 2000 : LIVE_REFETCH_MS,
+    refetchInterval: poll ? EVAL_STATUS_POLL_MS : IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -53,7 +65,8 @@ export function useEvaluationResults(id: string) {
     queryKey: ["evaluation-results", id],
     queryFn: () => api.getEvaluationResults(id),
     enabled: !!id,
-    refetchInterval: LIVE_REFETCH_MS,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -85,7 +98,8 @@ export function useProposal(id: string) {
     queryKey: ["proposal", id],
     queryFn: () => api.getProposal(id),
     enabled: !!id,
-    refetchInterval: LIVE_REFETCH_MS,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -133,8 +147,8 @@ export function useAgents() {
   return useQuery({
     queryKey: ["agents"],
     queryFn: api.getAgents,
-    refetchInterval: LIVE_REFETCH_MS,
-    retry: 2,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -147,8 +161,8 @@ export function useEscrows(evaluationId?: string) {
   return useQuery({
     queryKey: ["escrows", evaluationId],
     queryFn: () => api.listEscrows(evaluationId),
-    refetchInterval: LIVE_REFETCH_MS,
-    retry: 2,
+    refetchInterval: IDLE_REFETCH_MS,
+    ...queryDefaults,
   });
 }
 
@@ -202,8 +216,8 @@ export function useHealthDb() {
       if (!res.ok) throw new Error("Database unreachable");
       return res.json();
     },
-    refetchInterval: 30_000,
-    retry: 2,
+    refetchInterval: 60_000,
+    ...queryDefaults,
   });
 }
 
@@ -217,8 +231,8 @@ export function useHealthKaspa() {
       if (!res.ok) throw new Error("Kaspa node unreachable");
       return res.json();
     },
-    refetchInterval: 30_000,
-    retry: 2,
+    refetchInterval: 60_000,
+    ...queryDefaults,
   });
 }
 
@@ -226,7 +240,9 @@ export function useHealthCheck() {
   return useQuery({
     queryKey: ["health"],
     queryFn: api.checkHealth,
-    refetchInterval: 30_000,
-    retry: 2,
+    refetchInterval: 60_000,
+    ...queryDefaults,
   });
 }
+
+export { ACTIVE_REFETCH_MS };
