@@ -61,6 +61,7 @@ async def _ingest_proposal(
     return proposal
 
 
+@router.post("")
 @router.post("/")
 async def create_proposal(
     data: ProposalCreate,
@@ -123,6 +124,7 @@ async def upload_proposal_pdf(
     return {"id": proposal.id, "status": "created"}
 
 
+@router.get("")
 @router.get("/")
 def list_proposals(
     evaluation_id: str,

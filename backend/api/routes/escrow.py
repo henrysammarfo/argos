@@ -68,6 +68,7 @@ async def create_escrow(
     }
 
 
+@router.get("")
 @router.get("/")
 def list_escrows(
     evaluation_id: str | None = None,

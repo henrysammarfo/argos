@@ -13,6 +13,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 load_dotenv()
 
@@ -46,7 +47,7 @@ app = FastAPI(
     description="AI Grant & Procurement Evaluation System",
     version="1.0.0",
     lifespan=lifespan,
-    redirect_slashes=True,
+    redirect_slashes=False,
     docs_url=None if IS_PRODUCTION else "/docs",
     redoc_url=None if IS_PRODUCTION else "/redoc",
     openapi_url=None if IS_PRODUCTION else "/openapi.json",
@@ -58,6 +59,8 @@ app.add_exception_handler(RateLimitExceeded, lambda r, e: JSONResponse(
     content={"detail": "Rate limit exceeded. Please try again later."},
 ))
 app.add_middleware(SlowAPIMiddleware)
+# Trust X-Forwarded-* from Vercel/reverse proxy (avoids http:// redirect URLs).
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 trusted_hosts = os.getenv("TRUSTED_HOSTS", "").strip()
 if trusted_hosts:
