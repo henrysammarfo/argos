@@ -103,8 +103,17 @@ def test_verify_email():
 
 
 def test_unauthenticated_blocked():
-    r = client.get("/api/evaluations/")
+    r = client.get("/api/evaluations")
     assert r.status_code == 401
+
+
+def test_evaluations_no_trailing_slash_redirect():
+    """Proxied clients call /api/evaluations — must not 307 to http:// backend IP."""
+    data = _register("Slash Org", "slash@test.org")
+    headers = _auth_headers(data["access_token"])
+    r = client.get("/api/evaluations", headers=headers)
+    assert r.status_code == 200, r.text
+    assert r.headers.get("location") is None
 
 
 def test_run_requires_openai(monkeypatch):

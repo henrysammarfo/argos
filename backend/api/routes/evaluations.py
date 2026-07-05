@@ -46,6 +46,7 @@ def _flagged_from_red_flags(red_flags: str | None) -> int:
     return len(flags) if isinstance(flags, list) else 0
 
 
+@router.get("")
 @router.get("/")
 def list_evaluations(
     limit: int = 50,
@@ -96,6 +97,7 @@ def list_evaluations(
     return {"evaluations": result, "pagination": pagination_meta(total, limit, offset)}
 
 
+@router.post("")
 @router.post("/")
 async def create_evaluation(
     data: EvaluationCreate,
