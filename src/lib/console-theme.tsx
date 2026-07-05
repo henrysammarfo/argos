@@ -19,12 +19,36 @@ function readStoredTheme(): ConsoleTheme {
   return "stripe-light";
 }
 
+/** Sync console palette onto document.body (overrides marketing .dark tokens). */
+function applyBodyTheme(theme: ConsoleTheme) {
+  const body = document.body;
+  body.classList.remove("theme-stripe-light", "theme-stripe-dark", "dark");
+  if (theme === "stripe-dark") {
+    body.classList.add("theme-stripe-dark", "dark");
+  } else {
+    body.classList.add("theme-stripe-light");
+  }
+}
+
+function restoreMarketingBodyTheme() {
+  const body = document.body;
+  body.classList.remove("theme-stripe-light", "theme-stripe-dark");
+  body.classList.add("dark");
+}
+
 export function ConsoleThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ConsoleTheme>("stripe-light");
 
   useEffect(() => {
-    setThemeState(readStoredTheme());
+    const stored = readStoredTheme();
+    setThemeState(stored);
+    applyBodyTheme(stored);
+    return restoreMarketingBodyTheme;
   }, []);
+
+  useEffect(() => {
+    applyBodyTheme(theme);
+  }, [theme]);
 
   const setTheme = (next: ConsoleTheme) => {
     setThemeState(next);
