@@ -411,7 +411,8 @@ function ApiPanel() {
       <Card className="p-5 md:col-span-2">
         <div className="text-sm font-semibold text-foreground">Frontend env</div>
         <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-muted/40 p-4 font-mono text-xs text-foreground">
-          {`VITE_API_BASE_URL=http://localhost:8000/api
+          {`VITE_API_BASE_URL=/api
+# Vercel rewrites /api → Azure backend (see vercel.json)
 
 # Sign up at /signup — JWT stored in sessionStorage after login.`}
         </pre>

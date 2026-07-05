@@ -6,8 +6,6 @@ import { clearAuthSession, getAuthHeader } from "./auth";
 
 import { getApiBaseUrl } from "./api-config";
 
-const BASE_URL = getApiBaseUrl();
-
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -16,7 +14,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const auth = getAuthHeader();
   if (auth) headers["Authorization"] = auth;
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const res = await fetch(`${getApiBaseUrl()}${path}`, { ...options, headers });
   if (res.status === 401 && typeof window !== "undefined") {
     clearAuthSession();
     const redirect = encodeURIComponent(window.location.pathname);
