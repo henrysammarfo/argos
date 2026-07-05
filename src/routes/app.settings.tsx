@@ -21,9 +21,15 @@ export const Route = createFileRoute("/app/settings")({
 const TABS = ["Account", "Rubric", "Organization", "API keys", "Notifications"] as const;
 type Tab = (typeof TABS)[number];
 
+function resolveTab(tabParam?: string): Tab {
+  if (!tabParam) return "Account";
+  const match = TABS.find((t) => t.toLowerCase() === tabParam.toLowerCase());
+  return match ?? "Account";
+}
+
 function SettingsPage() {
   const { tab: tabParam } = Route.useSearch();
-  const [tab, setTab] = useState<Tab>((tabParam as Tab) || "Account");
+  const [tab, setTab] = useState<Tab>(() => resolveTab(tabParam));
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {

@@ -39,7 +39,7 @@ function SignupPage() {
         full_name: fullName.trim() || undefined,
       });
       if (code) setVerificationCode(code);
-      await navigate({ to: "/app/settings", search: { tab: "account" } });
+      await navigate({ to: "/app/settings", search: { tab: "Account" } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {

@@ -55,7 +55,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     <div className={`${themeClassName(theme)} flex min-h-dvh bg-background text-foreground`}>
       {/* Sidebar — desktop */}
       <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-        <SidebarInner isActive={isActive} onNavigate={() => setMobileOpen(false)} />
+        <SidebarInner
+          isActive={isActive}
+          organizationName={organizationName}
+          onNavigate={() => setMobileOpen(false)}
+        />
       </aside>
 
       {/* Sidebar — mobile drawer */}
@@ -67,7 +71,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             className="absolute inset-0 bg-black/40"
           />
           <aside className="relative flex h-full w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-xl">
-            <SidebarInner isActive={isActive} onNavigate={() => setMobileOpen(false)} />
+            <SidebarInner
+              isActive={isActive}
+              organizationName={organizationName}
+              onNavigate={() => setMobileOpen(false)}
+            />
           </aside>
         </div>
       )}
@@ -161,9 +169,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
 function SidebarInner({
   isActive,
+  organizationName,
   onNavigate,
 }: {
   isActive: (to: string, exact: boolean) => boolean;
+  organizationName: string;
   onNavigate: () => void;
 }) {
   const { theme } = useConsoleTheme();

@@ -52,8 +52,6 @@ export function getAuthHeader(): string {
 
 import { getApiBaseUrl } from "./api-config";
 
-const BASE_URL = getApiBaseUrl();
-
 interface AuthResponse {
   access_token: string;
   user: AuthUser;
@@ -71,7 +69,7 @@ export async function registerAccount(data: {
   organization_name: string;
   full_name?: string;
 }): Promise<{ user: AuthUser; verification_code?: string }> {
-  const res = await fetch(`${BASE_URL}/auth/register`, {
+  const res = await fetch(`${getApiBaseUrl()}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -86,7 +84,7 @@ export async function loginWithPassword(
   email: string,
   password: string,
 ): Promise<AuthUser> {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
+  const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -98,7 +96,7 @@ export async function loginWithPassword(
 }
 
 export async function fetchMe(): Promise<AuthUser> {
-  const res = await fetch(`${BASE_URL}/auth/me`, {
+  const res = await fetch(`${getApiBaseUrl()}/auth/me`, {
     headers: { Authorization: getAuthHeader() },
   });
   if (!res.ok) throw new Error(await parseError(res));
@@ -120,7 +118,7 @@ export async function validateSession(): Promise<boolean> {
 }
 
 export async function verifyEmail(code: string): Promise<AuthUser> {
-  const res = await fetch(`${BASE_URL}/auth/verify-email`, {
+  const res = await fetch(`${getApiBaseUrl()}/auth/verify-email`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -134,7 +132,7 @@ export async function verifyEmail(code: string): Promise<AuthUser> {
 }
 
 export async function resendVerification(): Promise<{ verification_code?: string }> {
-  const res = await fetch(`${BASE_URL}/auth/resend-verification`, {
+  const res = await fetch(`${getApiBaseUrl()}/auth/resend-verification`, {
     method: "POST",
     headers: { Authorization: getAuthHeader() },
   });

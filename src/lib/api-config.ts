@@ -3,13 +3,12 @@ export function getApiBaseUrl(): string {
   const env = import.meta.env.VITE_API_BASE_URL;
   if (env && env.trim()) {
     const base = env.replace(/\/$/, "");
-    // Mixed-content guard: never call plain HTTP from an HTTPS page in the browser.
-    if (
-      typeof window !== "undefined" &&
-      window.location.protocol === "https:" &&
-      base.startsWith("http://")
-    ) {
-      return "/api";
+    // Never call plain HTTP from an HTTPS page, or from SSR when env points at HTTP.
+    if (base.startsWith("http://")) {
+      const onHttpsPage =
+        typeof window !== "undefined" && window.location.protocol === "https:";
+      const isProd = import.meta.env.PROD;
+      if (onHttpsPage || isProd) return "/api";
     }
     return base;
   }
